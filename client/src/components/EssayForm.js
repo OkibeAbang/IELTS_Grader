@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import PromptPicker from './PromptPicker';
 
 const MIN_WORDS = { task1: 150, task2: 250 };
 const TIMER_SECONDS = 40 * 60;
@@ -108,6 +109,8 @@ export default function EssayForm({ onSubmit, submitting }) {
           required
         />
       </label>
+
+      <PromptPicker taskType={taskType} onSelect={setPrompt} />
 
       <label>
         Your essay

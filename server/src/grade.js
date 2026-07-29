@@ -1,10 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
+import { generateJson } from "./aiClient.js";
 import { renderRubricText, MIN_WORD_COUNT, CRITERION_LABELS } from "./rubric.js";
 import { renderFewShotText } from "./fewshot.js";
-
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-const MODEL = "gemini-flash-latest";
 
 function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -100,12 +96,6 @@ Candidate essay (word count: ${wordCount}):
 ${essay}`;
 }
 
-function extractJson(text) {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const jsonText = fenced ? fenced[1] : text;
-  return JSON.parse(jsonText.trim());
-}
-
 async function gradeEssay({ essay, prompt, taskType }) {
   if (!["task1", "task2"].includes(taskType)) {
     throw new Error("taskType must be 'task1' or 'task2'");
@@ -116,17 +106,7 @@ async function gradeEssay({ essay, prompt, taskType }) {
   const systemPrompt = buildSystemPrompt(taskType);
   const userMessage = buildUserMessage({ essay, prompt, taskType, wordCount: check.wordCount });
 
-  const response = await genAI.models.generateContent({
-    model: MODEL,
-    contents: userMessage,
-    config: {
-      systemInstruction: systemPrompt,
-      maxOutputTokens: 4096,
-      responseMimeType: "application/json",
-    },
-  });
-
-  const result = extractJson(response.text);
+  const result = await generateJson({ systemPrompt, userMessage });
 
   return { ...result, preCheck: check };
 }
