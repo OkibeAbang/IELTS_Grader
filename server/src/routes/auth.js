@@ -74,11 +74,10 @@ router.post("/signup", authLimiter, async (req, res) => {
 
   try {
     const passwordHash = await hashPassword(password);
-    const user = createUser({ email, passwordHash });
-
-    const token = generateToken();
-    setVerificationToken(user.id, token, isoInMs(VERIFICATION_TOKEN_TTL_MS));
-    await sendVerificationEmail(user, token);
+    // Auto-verified: with no SMTP configured, the verification email only
+    // ever reached the server console, permanently blocking every real user
+    // from the (paid, Gemini-backed) speaking grading endpoint.
+    const user = createUser({ email, passwordHash, emailVerified: true });
 
     setSessionCookie(res, user);
     res.status(201).json({ user: toPublicUser(user) });

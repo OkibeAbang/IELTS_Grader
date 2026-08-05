@@ -55,6 +55,12 @@ async function initDb() {
   ensureColumn("users", "reset_token", "TEXT");
   ensureColumn("users", "reset_token_expires_at", "TEXT");
 
+  // Signup now auto-verifies (see routes/auth.js) since with no SMTP set up,
+  // the old verification email never reached anyone. Backfill accounts stuck
+  // unverified from before that change; leave Google-linked rows alone since
+  // their verified flag reflects what Google itself reported.
+  db.run(`UPDATE users SET email_verified = 1 WHERE email_verified = 0 AND google_id IS NULL`);
+
   persist();
   return db;
 }
