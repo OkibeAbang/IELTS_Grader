@@ -4,6 +4,8 @@ const CRITERION_LABELS = {
   coherence_cohesion: 'Coherence & Cohesion',
   lexical_resource: 'Lexical Resource',
   grammar_accuracy: 'Grammatical Range & Accuracy',
+  fluency_coherence: 'Fluency & Coherence',
+  pronunciation: 'Pronunciation',
 };
 
 function stripQuotes(text) {

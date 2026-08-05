@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchPromptBank, generatePrompt } from '../api';
+import { fetchPromptBank, generatePrompt } from '../api/writing';
 
 const SUBTYPE_LABELS = {
   opinion: 'Opinion',
