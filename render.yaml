@@ -1,0 +1,35 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# In the Render dashboard: New > Blueprint > connect this repo. Render reads
+# this file and provisions the service below; anything marked `sync: false`
+# is prompted for in the dashboard rather than stored here, since this file
+# is committed to git.
+services:
+  - type: web
+    name: ielts-grader-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # Exact frontend origin, no trailing slash (e.g. https://your-app.vercel.app).
+      # Required for CORS + cross-origin cookies — set this after the Vercel
+      # deploy exists, then redeploy this service.
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      # Admin panel login — see REMINDERS.md / server/secret for local dev.
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
