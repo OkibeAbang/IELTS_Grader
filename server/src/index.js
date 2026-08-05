@@ -1,93 +1,39 @@
 import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import { gradeEssay } from "./grade.js";
-import { gradeSection } from "./gradeSection.js";
-import { getPromptBank } from "./promptBank.js";
-import { generatePrompt } from "./generatePrompt.js";
+import cookieParser from "cookie-parser";
+import { initDb } from "./db.js";
+import { writingRouter } from "./routes/writing.js";
+import { authRouter } from "./routes/auth.js";
+import { speakingRouter } from "./routes/speaking.js";
+import { adminRouter } from "./routes/admin.js";
+
+// Admin credentials live in a separate, gitignored `secret` file (not .env)
+// so they can never end up committed alongside less sensitive config.
+dotenv.config({ path: "secret" });
 
 const app = express();
-app.use(cors());
+// Render (and most PaaS hosts) sit behind a reverse proxy that sets
+// X-Forwarded-For; without this, express-rate-limit can't correctly key by
+// client IP (and v8+ throws a validation error rather than silently misbehaving).
+app.set("trust proxy", 1);
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:3000", credentials: true }));
+app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/api/grade", async (req, res) => {
-  const { essay, prompt, taskType } = req.body ?? {};
-
-  if (typeof essay !== "string" || !essay.trim()) {
-    return res.status(400).json({ error: "essay is required" });
-  }
-  if (typeof prompt !== "string" || !prompt.trim()) {
-    return res.status(400).json({ error: "prompt is required" });
-  }
-  if (!["task1", "task2"].includes(taskType)) {
-    return res.status(400).json({ error: "taskType must be 'task1' or 'task2'" });
-  }
-
-  try {
-    const result = await gradeEssay({ essay, prompt, taskType });
-    res.json(result);
-  } catch (err) {
-    console.error("Grading failed:", err);
-    res.status(502).json({ error: "Grading failed. Please try again." });
-  }
-});
-
-app.post("/api/grade-section", async (req, res) => {
-  const { text, prompt, taskType, section } = req.body ?? {};
-
-  if (typeof text !== "string" || !text.trim()) {
-    return res.status(400).json({ error: "text is required" });
-  }
-  if (typeof prompt !== "string" || !prompt.trim()) {
-    return res.status(400).json({ error: "prompt is required" });
-  }
-  if (!["task1", "task2"].includes(taskType)) {
-    return res.status(400).json({ error: "taskType must be 'task1' or 'task2'" });
-  }
-  if (!["introduction", "main_body", "conclusion"].includes(section)) {
-    return res.status(400).json({ error: "section must be 'introduction', 'main_body', or 'conclusion'" });
-  }
-
-  try {
-    const result = await gradeSection({ text, prompt, taskType, section });
-    res.json(result);
-  } catch (err) {
-    console.error("Section grading failed:", err);
-    res.status(502).json({ error: "Grading failed. Please try again." });
-  }
-});
-
-app.get("/api/prompts", (req, res) => {
-  const { taskType } = req.query;
-
-  if (!["task1", "task2"].includes(taskType)) {
-    return res.status(400).json({ error: "taskType must be 'task1' or 'task2'" });
-  }
-
-  res.json({ prompts: getPromptBank(taskType) });
-});
-
-app.post("/api/prompts/generate", async (req, res) => {
-  const { taskType, topic } = req.body ?? {};
-
-  if (!["task1", "task2"].includes(taskType)) {
-    return res.status(400).json({ error: "taskType must be 'task1' or 'task2'" });
-  }
-
-  try {
-    const result = await generatePrompt({ taskType, topic });
-    res.json(result);
-  } catch (err) {
-    console.error("Prompt generation failed:", err);
-    res.status(502).json({ error: "Question generation failed. Please try again." });
-  }
-});
+app.use("/api/auth", authRouter);
+app.use("/api", writingRouter);
+app.use("/api/speaking", speakingRouter);
+app.use("/api/admin", adminRouter);
 
 const PORT = process.env.PORT || 4000;
+
+await initDb();
 app.listen(PORT, () => {
   console.log(`IELTS grader API listening on http://localhost:${PORT}`);
 });
