@@ -32,9 +32,11 @@ function Sidebar() {
     navigate('/');
   }
 
+  const brandTarget = user ? '/essay-grader' : '/';
+
   return (
     <aside className="sidebar">
-      <Link to="/" className="sidebar-brand">IELTS Grader</Link>
+      <Link to={brandTarget} className="sidebar-brand">IELTS Grader</Link>
       <nav className="sidebar-nav">
         <NavLink to="/essay-grader" end className={sidebarLinkClass}>Essay Grading</NavLink>
         <NavLink to="/speaking" end className={sidebarLinkClass}>Speaking Practice</NavLink>
