@@ -31,7 +31,11 @@ export default function TopicPicker({ onSelect }) {
             className="topic-card"
             onClick={() => onSelect(t.id)}
           >
-            {t.topic}
+            <span className="topic-card-title">{t.topic}</span>
+            <span className="topic-card-badges">
+              <span className="topic-badge">Parts 1–3</span>
+              <span className="topic-badge topic-badge-duration">⏱ ~{t.estimatedMinutes} min</span>
+            </span>
           </button>
         ))}
       </div>

@@ -6,8 +6,15 @@ const PART_LABELS = {
   part3: 'Part 3 — Discussion',
 };
 
+function targetGapInfo(overallBand, targetBand) {
+  const gap = Math.round((overallBand - targetBand) * 10) / 10;
+  if (gap >= 0) return { label: gap === 0 ? 'On target' : `+${gap.toFixed(1)} above target`, className: 'target-gap-met' };
+  return { label: `${gap.toFixed(1)} below target`, className: 'target-gap-below' };
+}
+
 export default function SpeakingResultsView({ result }) {
-  const { criteria, overall_band, top_3_improvements, next_band_gap, part_transcripts, preCheck } = result;
+  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, part_transcripts, preCheck } = result;
+  const gapInfo = targetBand ? targetGapInfo(overall_band, targetBand) : null;
 
   return (
     <div className="results-view">
@@ -22,6 +29,11 @@ export default function SpeakingResultsView({ result }) {
       <div className="overall-band">
         <span className="overall-band-label">Overall Band</span>
         <span className="overall-band-score">{overall_band}</span>
+        {gapInfo && (
+          <span className={`target-gap ${gapInfo.className}`}>
+            Target {Number(targetBand).toFixed(1)} · {gapInfo.label}
+          </span>
+        )}
       </div>
 
       <div className="criteria-grid">

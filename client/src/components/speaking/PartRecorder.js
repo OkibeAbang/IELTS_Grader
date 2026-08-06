@@ -1,4 +1,5 @@
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
+import AudioVisualizer from './AudioVisualizer';
 
 function formatTime(sec) {
   const m = Math.floor(sec / 60);
@@ -7,7 +8,7 @@ function formatTime(sec) {
 }
 
 export default function PartRecorder({ partLabel, title, questions, onComplete }) {
-  const { status, durationSec, audioBlob, audioUrl, error, start, stop, reset } = useAudioRecorder();
+  const { status, durationSec, audioBlob, audioUrl, error, audioLevel, start, stop, reset } = useAudioRecorder();
 
   function handleContinue() {
     onComplete({ audioBlob, audioUrl, durationSec });
@@ -32,6 +33,7 @@ export default function PartRecorder({ partLabel, title, questions, onComplete }
         )}
         {status === 'recording' && (
           <>
+            <AudioVisualizer level={audioLevel} />
             <span className="recording-indicator">● Recording… {formatTime(durationSec)}</span>
             <button type="button" className="submit-btn" onClick={stop}>
               Stop

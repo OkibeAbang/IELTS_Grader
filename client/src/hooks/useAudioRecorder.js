@@ -23,17 +23,32 @@ export function useAudioRecorder() {
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [error, setError] = useState(null);
+  const [audioLevel, setAudioLevel] = useState(0); // 0..1, live input level while recording
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const meterFrameRef = useRef(null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+  }, []);
+
+  const stopMeter = useCallback(() => {
+    if (meterFrameRef.current) {
+      cancelAnimationFrame(meterFrameRef.current);
+      meterFrameRef.current = null;
+    }
+    audioContextRef.current?.close().catch(() => {});
+    audioContextRef.current = null;
+    analyserRef.current = null;
+    setAudioLevel(0);
   }, []);
 
   const stopStream = useCallback(() => {
@@ -78,6 +93,35 @@ export function useAudioRecorder() {
       timerRef.current = setInterval(() => {
         setDurationSec(Math.floor((Date.now() - startedAt) / 1000));
       }, 250);
+
+      // Best-effort: a visual level meter, not required for recording itself,
+      // so a construction failure here shouldn't break the actual recording.
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        const tick = () => {
+          analyser.getByteTimeDomainData(data);
+          let sumSquares = 0;
+          for (let i = 0; i < data.length; i++) {
+            const normalized = (data[i] - 128) / 128;
+            sumSquares += normalized * normalized;
+          }
+          const rms = Math.sqrt(sumSquares / data.length);
+          setAudioLevel(Math.min(1, rms * 4));
+          meterFrameRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch {
+        // No visual meter — recording still works fine without it.
+      }
     } catch (err) {
       setError(err.message || 'Could not access the microphone');
       setStatus('idle');
@@ -86,14 +130,16 @@ export function useAudioRecorder() {
 
   const stop = useCallback(() => {
     stopTimer();
+    stopMeter();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
     setStatus('stopped');
-  }, [stopTimer]);
+  }, [stopTimer, stopMeter]);
 
   const reset = useCallback(() => {
     stopTimer();
+    stopMeter();
     stopStream();
     setStatus('idle');
     setDurationSec(0);
@@ -103,12 +149,13 @@ export function useAudioRecorder() {
       return null;
     });
     chunksRef.current = [];
-  }, [stopStream, stopTimer]);
+  }, [stopStream, stopTimer, stopMeter]);
 
   useEffect(() => () => {
     stopTimer();
+    stopMeter();
     stopStream();
-  }, [stopStream, stopTimer]);
+  }, [stopStream, stopTimer, stopMeter]);
 
-  return { status, durationSec, audioBlob, audioUrl, error, start, stop, reset };
+  return { status, durationSec, audioBlob, audioUrl, error, audioLevel, start, stop, reset };
 }

@@ -10,7 +10,7 @@ export async function fetchSpeakingTopic(id) {
   return data.topic;
 }
 
-export async function submitSpeakingAttempt({ topicId, recordings }) {
+export async function submitSpeakingAttempt({ topicId, recordings, targetBand }) {
   const formData = new FormData();
   formData.append('topicId', topicId);
   formData.append('part1DurationSec', String(recordings.part1.durationSec));
@@ -19,6 +19,9 @@ export async function submitSpeakingAttempt({ topicId, recordings }) {
   formData.append('part1Audio', recordings.part1.audioBlob, 'part1.webm');
   formData.append('part2Audio', recordings.part2.audioBlob, 'part2.webm');
   formData.append('part3Audio', recordings.part3.audioBlob, 'part3.webm');
+  if (targetBand) {
+    formData.append('targetBand', String(targetBand));
+  }
 
   const res = await fetch(`${API_BASE_URL}/api/speaking/attempts`, {
     method: 'POST',

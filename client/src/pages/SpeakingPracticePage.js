@@ -2,15 +2,19 @@ import { useEffect, useState } from 'react';
 import { fetchSpeakingTopic, submitSpeakingAttempt } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
 import TopicPicker from '../components/speaking/TopicPicker';
+import Part1Conversation from '../components/speaking/Part1Conversation';
 import PartRecorder from '../components/speaking/PartRecorder';
 import CueCardPart2 from '../components/speaking/CueCardPart2';
 import ReviewSubmit from '../components/speaking/ReviewSubmit';
 import SpeakingResultsView from '../components/SpeakingResultsView';
 
+const TARGET_BAND_OPTIONS = [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4];
+
 export default function SpeakingPracticePage() {
   const { user, resendVerification } = useAuth();
   const [topicId, setTopicId] = useState(null);
   const [topic, setTopic] = useState(null);
+  const [targetBand, setTargetBand] = useState('');
   const [step, setStep] = useState('pick'); // pick | part1 | part2 | part3 | review
   const [recordings, setRecordings] = useState({});
   const [loadError, setLoadError] = useState(null);
@@ -48,7 +52,7 @@ export default function SpeakingPracticePage() {
     setSubmitError(null);
     setNeedsVerification(false);
     try {
-      const data = await submitSpeakingAttempt({ topicId, recordings });
+      const data = await submitSpeakingAttempt({ topicId, recordings, targetBand });
       setResult(data);
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED') {
@@ -101,12 +105,23 @@ export default function SpeakingPracticePage() {
 
       {loadError && <div className="error-banner">{loadError}</div>}
 
-      {step === 'pick' && <TopicPicker onSelect={setTopicId} />}
+      {step === 'pick' && (
+        <>
+          <label className="target-band-picker">
+            Target band (optional)
+            <select value={targetBand} onChange={(e) => setTargetBand(e.target.value)}>
+              <option value="">No target</option>
+              {TARGET_BAND_OPTIONS.map((b) => (
+                <option key={b} value={b}>{b.toFixed(1)}</option>
+              ))}
+            </select>
+          </label>
+          <TopicPicker onSelect={setTopicId} />
+        </>
+      )}
 
       {topic && step === 'part1' && (
-        <PartRecorder
-          partLabel="Part 1"
-          title="Interview"
+        <Part1Conversation
           questions={topic.part1.questions}
           onComplete={(data) => handlePartComplete('part1', data)}
         />
