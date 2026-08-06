@@ -176,8 +176,24 @@ const SPEAKING_TOPICS = [
   },
 ];
 
+/**
+ * Rough estimate of total speaking time for a topic, from its actual question
+ * counts and Part 2's fixed prep/speak timers — not a fixed number, since it's
+ * meant to reflect what the topic actually asks for.
+ */
+function estimateMinutes(topic) {
+  const part1Seconds = topic.part1.questions.length * 40;
+  const part2Seconds = topic.part2.cueCard.prepSeconds + topic.part2.cueCard.speakSeconds;
+  const part3Seconds = topic.part3.questions.length * 45;
+  return Math.round((part1Seconds + part2Seconds + part3Seconds) / 60);
+}
+
 function getSpeakingTopicBank() {
-  return SPEAKING_TOPICS.map(({ id, topic }) => ({ id, topic }));
+  return SPEAKING_TOPICS.map((t) => ({
+    id: t.id,
+    topic: t.topic,
+    estimatedMinutes: estimateMinutes(t),
+  }));
 }
 
 function getSpeakingTopic(id) {

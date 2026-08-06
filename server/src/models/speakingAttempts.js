@@ -12,6 +12,7 @@ function toAttempt(row) {
     part3AudioPath: row.part3_audio_path,
     criteria: JSON.parse(row.criteria_json),
     overallBand: row.overall_band,
+    targetBand: row.target_band,
     rawGraderResult: JSON.parse(row.raw_grader_json),
     createdAt: row.created_at,
   };
@@ -26,12 +27,13 @@ function createAttempt({
   part3AudioPath,
   criteria,
   overallBand,
+  targetBand = null,
   rawGraderResult,
 }) {
   const id = run(
     `INSERT INTO speaking_attempts
-      (user_id, topic_id, topic_label, part1_audio_path, part2_audio_path, part3_audio_path, criteria_json, overall_band, raw_grader_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (user_id, topic_id, topic_label, part1_audio_path, part2_audio_path, part3_audio_path, criteria_json, overall_band, target_band, raw_grader_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       topicId,
@@ -41,6 +43,7 @@ function createAttempt({
       part3AudioPath,
       JSON.stringify(criteria),
       overallBand,
+      targetBand,
       JSON.stringify(rawGraderResult),
     ]
   );
@@ -49,7 +52,7 @@ function createAttempt({
 
 function listAttemptsForUser(userId) {
   const rows = queryAll(
-    `SELECT id, topic_id, topic_label, overall_band, created_at
+    `SELECT id, topic_id, topic_label, overall_band, target_band, created_at
      FROM speaking_attempts WHERE user_id = ? ORDER BY created_at DESC`,
     [userId]
   );
@@ -58,6 +61,7 @@ function listAttemptsForUser(userId) {
     topicId: row.topic_id,
     topicLabel: row.topic_label,
     overallBand: row.overall_band,
+    targetBand: row.target_band,
     createdAt: row.created_at,
   }));
 }

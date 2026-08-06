@@ -138,6 +138,7 @@ router.get("/attempts/:id", (req, res) => {
       attemptId: attempt.id,
       userId: attempt.userId,
       topicLabel: attempt.topicLabel,
+      targetBand: attempt.targetBand,
       createdAt: attempt.createdAt,
     },
   });

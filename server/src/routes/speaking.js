@@ -30,7 +30,7 @@ const audioUpload = upload.fields([
 ]);
 
 router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (req, res) => {
-  const { topicId, part1DurationSec, part2DurationSec, part3DurationSec } = req.body ?? {};
+  const { topicId, part1DurationSec, part2DurationSec, part3DurationSec, targetBand } = req.body ?? {};
   const files = req.files ?? {};
 
   const topic = typeof topicId === "string" ? getSpeakingTopic(topicId) : null;
@@ -39,6 +39,15 @@ router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (
   }
   if (!files.part1Audio?.[0] || !files.part2Audio?.[0] || !files.part3Audio?.[0]) {
     return res.status(400).json({ error: "part1Audio, part2Audio, and part3Audio files are all required" });
+  }
+
+  let parsedTargetBand = null;
+  if (targetBand !== undefined && targetBand !== "") {
+    const n = Number(targetBand);
+    if (!Number.isFinite(n) || n < 4 || n > 9) {
+      return res.status(400).json({ error: "targetBand must be a number between 4 and 9" });
+    }
+    parsedTargetBand = n;
   }
 
   const durations = {
@@ -65,10 +74,11 @@ router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (
       ...audioPaths,
       criteria: gradedResult.criteria,
       overallBand: gradedResult.overall_band,
+      targetBand: parsedTargetBand,
       rawGraderResult: gradedResult,
     });
 
-    res.status(201).json({ ...gradedResult, attemptId: attempt.id });
+    res.status(201).json({ ...gradedResult, attemptId: attempt.id, targetBand: attempt.targetBand });
   } catch (err) {
     console.error("Speaking grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
@@ -84,7 +94,15 @@ router.get("/attempts/:id", requireAuth, (req, res) => {
   if (!attempt || attempt.userId !== req.user.id) {
     return res.status(404).json({ error: "Attempt not found" });
   }
-  res.json({ attempt: { ...attempt.rawGraderResult, attemptId: attempt.id, topicLabel: attempt.topicLabel, createdAt: attempt.createdAt } });
+  res.json({
+    attempt: {
+      ...attempt.rawGraderResult,
+      attemptId: attempt.id,
+      topicLabel: attempt.topicLabel,
+      targetBand: attempt.targetBand,
+      createdAt: attempt.createdAt,
+    },
+  });
 });
 
 router.delete("/attempts/:id", requireAuth, (req, res) => {

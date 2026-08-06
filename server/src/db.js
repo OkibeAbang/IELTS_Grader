@@ -49,6 +49,7 @@ async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_speaking_attempts_user ON speaking_attempts(user_id, created_at DESC);
   `);
 
+  ensureColumn("speaking_attempts", "target_band", "REAL");
   ensureColumn("users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn("users", "verification_token", "TEXT");
   ensureColumn("users", "verification_token_expires_at", "TEXT");
