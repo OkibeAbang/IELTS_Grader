@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fetchSpeakingTopic, submitSpeakingAttempt } from '../api/speaking';
+import { fetchSpeakingTopic, submitSpeakingAttempt, fetchLiveVoiceStatus } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
+import Part1LiveConversation from '../components/speaking/Part1LiveConversation';
 import PartRecorder from '../components/speaking/PartRecorder';
 import CueCardPart2 from '../components/speaking/CueCardPart2';
 import ReviewSubmit from '../components/speaking/ReviewSubmit';
@@ -23,6 +24,12 @@ export default function SpeakingPracticePage() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendStatus, setResendStatus] = useState(null);
   const [result, setResult] = useState(null);
+  const [liveVoiceAvailable, setLiveVoiceAvailable] = useState(false);
+  const [useLiveVoice, setUseLiveVoice] = useState(false);
+
+  useEffect(() => {
+    fetchLiveVoiceStatus().then(setLiveVoiceAvailable).catch(() => setLiveVoiceAvailable(false));
+  }, []);
 
   useEffect(() => {
     if (!topicId) return;
@@ -84,6 +91,7 @@ export default function SpeakingPracticePage() {
     setNeedsVerification(false);
     setResendStatus(null);
     setResult(null);
+    setUseLiveVoice(false);
   }
 
   return (
@@ -116,11 +124,28 @@ export default function SpeakingPracticePage() {
               ))}
             </select>
           </label>
+          {liveVoiceAvailable && (
+            <label className="target-band-picker">
+              <input
+                type="checkbox"
+                checked={useLiveVoice}
+                onChange={(e) => setUseLiveVoice(e.target.checked)}
+              />
+              Try live AI conversation for Part 1 (beta)
+            </label>
+          )}
           <TopicPicker onSelect={setTopicId} />
         </>
       )}
 
-      {topic && step === 'part1' && (
+      {topic && step === 'part1' && useLiveVoice && (
+        <Part1LiveConversation
+          onComplete={(data) => handlePartComplete('part1', data)}
+          onCancel={() => setUseLiveVoice(false)}
+        />
+      )}
+
+      {topic && step === 'part1' && !useLiveVoice && (
         <Part1Conversation
           questions={topic.part1.questions}
           onComplete={(data) => handlePartComplete('part1', data)}

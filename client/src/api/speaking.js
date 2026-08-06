@@ -56,3 +56,13 @@ export async function deleteAttempt(id) {
 export function attemptAudioUrl(attemptId, part) {
   return `${API_BASE_URL}/api/speaking/attempts/${encodeURIComponent(attemptId)}/audio/${part}`;
 }
+
+export async function fetchLiveVoiceStatus() {
+  const data = await requestJson('/api/speaking/live/status');
+  return data.enabled;
+}
+
+export async function fetchLiveTicket() {
+  const data = await requestJson('/api/speaking/live/ticket', { method: 'POST' });
+  return data.ticket;
+}

@@ -13,7 +13,7 @@ function targetGapInfo(overallBand, targetBand) {
 }
 
 export default function SpeakingResultsView({ result }) {
-  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, part_transcripts, preCheck } = result;
+  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, corrections, part_transcripts, preCheck } = result;
   const gapInfo = targetBand ? targetGapInfo(overall_band, targetBand) : null;
 
   return (
@@ -57,6 +57,30 @@ export default function SpeakingResultsView({ result }) {
         <div className="next-band-gap">
           <h3>What separates this from the next band</h3>
           <p>{next_band_gap}</p>
+        </div>
+      )}
+
+      {corrections?.length > 0 && (
+        <div className="corrections">
+          <h3>Try saying it this way</h3>
+          <p className="corrections-subtitle">
+            Simple swaps that could lift your score{targetBand ? ` toward Band ${Number(targetBand).toFixed(1)}` : ''}.
+          </p>
+          <ul className="corrections-list">
+            {corrections.map((c, i) => (
+              <li key={i} className="correction-item">
+                <div className="correction-original">
+                  <span className="correction-label">You said</span>
+                  <p>&ldquo;{c.original}&rdquo;</p>
+                </div>
+                <div className="correction-suggestion">
+                  <span className="correction-label">Try instead</span>
+                  <p>&ldquo;{c.correction}&rdquo;</p>
+                </div>
+                {c.why && <p className="correction-why">{c.why}</p>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
