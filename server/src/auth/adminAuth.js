@@ -3,9 +3,11 @@ import jwt from "jsonwebtoken";
 const ADMIN_COOKIE_NAME = "ielts_admin_session";
 const ADMIN_TOKEN_TTL = "12h";
 
+// See jwt.js — the frontend proxies /api/* through Vercel, so this is always
+// same-origin from the browser's perspective; SameSite=Lax is correct here too.
 const adminCookieOptions = {
   httpOnly: true,
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  sameSite: "lax",
   secure: process.env.NODE_ENV === "production",
   maxAge: 12 * 60 * 60 * 1000,
 };
