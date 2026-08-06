@@ -24,8 +24,11 @@ function preCheckSpeaking({ part1DurationSec, part2DurationSec, part3DurationSec
   return { part1DurationSec, part2DurationSec, part3DurationSec, issues };
 }
 
-function buildSpeakingSystemPrompt() {
+function buildSpeakingSystemPrompt({ targetBand } = {}) {
   const rubricText = renderSpeakingRubricText();
+  const correctionsGoal = targetBand
+    ? `Band ${targetBand} (the candidate's stated target band)`
+    : `the next half band above their overall score`;
 
   return `You are an official IELTS examiner grading a candidate's Speaking test from audio recordings of all 3 parts (Part 1: short interview, Part 2: 2-minute long turn on a cue card, Part 3: follow-up discussion).
 
@@ -39,6 +42,10 @@ ${rubricText}
 2. Grade HOLISTICALLY across all 3 parts as a single performance — this is how real IELTS Speaking is scored (one examiner, one overall judgement per criterion), not a per-part sub-score. Analyze the evidence against each of the four criteria SEPARATELY: ${CRITERION_LABELS.fluency_coherence}, ${CRITERION_LABELS.lexical_resource}, ${CRITERION_LABELS.grammar_accuracy}, ${CRITERION_LABELS.pronunciation}. Quote or closely paraphrase specific things the candidate said as evidence before assigning a score.
 3. Only after the evidence-based analysis, assign a band score (1-9, half-bands like 6.5 allowed) per criterion, citing which band descriptor it matches most closely.
 4. Compute the overall band as the average of the 4 criteria, rounded to the nearest half band per IELTS convention (round .25 up to the next half band, round .75 up to the next whole band).
+5. Corrections: pick 3-6 specific things the candidate actually said (quote or closely paraphrase the transcript) where the wording held their score back — a grammar mistake, an awkward or imprecise phrase, weak vocabulary. For each, write a corrected version that expresses the SAME idea.
+   - Keep every correction in the simplest language that fixes the problem. Do not reach for advanced vocabulary or complex grammar the candidate hasn't already demonstrated — a correction should be something they could realistically say on their next attempt, not a showcase of native-level idiom.
+   - Calibrate ambition to ${correctionsGoal}: only fix what's actually needed to reach that level, and no further. Don't "correct" sentences that are already adequate for it.
+   - Never give a pronunciation "correction" — pronunciation is about how something sounds, not what is said, and can't be fixed by rewriting text.
 
 ## Guard against grade inflation
 
@@ -58,7 +65,8 @@ Respond with ONLY a single JSON object (no markdown fences, no prose outside the
   },
   "overall_band": number,
   "top_3_improvements": string[],
-  "next_band_gap": string
+  "next_band_gap": string,
+  "corrections": [ { "original": string, "correction": string, "why": string } ]
 }`;
 }
 
@@ -88,6 +96,7 @@ async function gradeSpeaking({
   part1DurationSec,
   part2DurationSec,
   part3DurationSec,
+  targetBand,
 }) {
   const check = preCheckSpeaking({ part1DurationSec, part2DurationSec, part3DurationSec });
 
@@ -103,7 +112,7 @@ async function gradeSpeaking({
     uploadAudioFile(part3Wav, "audio/wav", `speaking-part3-${topic.id}`),
   ]);
 
-  const systemPrompt = buildSpeakingSystemPrompt();
+  const systemPrompt = buildSpeakingSystemPrompt({ targetBand });
   const contents = buildSpeakingContents({ topic, part1FileRef, part2FileRef, part3FileRef });
 
   const result = await generateJson({ systemPrompt, contents, maxOutputTokens: 6000 });

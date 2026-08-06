@@ -7,9 +7,29 @@ import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
 import { gradeSpeaking } from "../gradeSpeaking.js";
 import { saveAttemptAudio, resolveAudioPath, deleteAttemptAudio } from "../audioStorage.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/speakingAttempts.js";
+import { createLiveTicket } from "../liveSpeaking.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+
+function liveVoiceEnabled() {
+  return process.env.ENABLE_LIVE_VOICE === "true";
+}
+
+router.get("/live/status", (_req, res) => {
+  res.json({ enabled: liveVoiceEnabled() });
+});
+
+// Short-lived, single-use ticket for the WebSocket connection in liveSpeaking.js.
+// The WS connects directly to this server's origin (not proxied through Vercel
+// like other /api/* calls), so it can't rely on the session cookie the way an
+// ordinary request can — see liveSpeaking.js for the full reasoning.
+router.post("/live/ticket", requireAuth, requireVerifiedEmail, (req, res) => {
+  if (!liveVoiceEnabled()) {
+    return res.status(404).json({ error: "Live conversation is not enabled" });
+  }
+  res.json({ ticket: createLiveTicket(req.user.id) });
+});
 
 router.get("/topics", (_req, res) => {
   res.json({ topics: getSpeakingTopicBank() });
@@ -63,6 +83,7 @@ router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (
       part2Buffer: files.part2Audio[0].buffer,
       part3Buffer: files.part3Audio[0].buffer,
       ...durations,
+      targetBand: parsedTargetBand,
     });
     const { wavBuffers, ...gradedResult } = result;
 

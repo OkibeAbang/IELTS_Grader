@@ -12,6 +12,7 @@
     "@anthropic-ai/sdk": "^0.115.0",
     "@google/genai": "^2.13.0",
     "bcryptjs": "^3.0.3",
+    "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -23,6 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
-    "sql.js": "^1.14.1"
+    "sql.js": "^1.14.1",
+    "ws": "^8.21.2"
   }
 }
