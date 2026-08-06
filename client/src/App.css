@@ -1087,6 +1087,25 @@ h3 {
   font-size: 1.05rem;
 }
 
+.app-header + h2,
+.app-header ~ h2 {
+  font-size: 1.25rem;
+  margin: 28px 0 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--brown-line);
+}
+
+.app-header + h2 {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 8px;
+}
+
+.dashboard-section h3 {
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+}
+
 .attempt-history-table {
   width: 100%;
   border-collapse: collapse;

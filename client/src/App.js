@@ -9,6 +9,7 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminAttemptDetailPage from './pages/AdminAttemptDetailPage';
 import EssayGraderPage from './pages/EssayGraderPage';
+import EssayAttemptDetailPage from './pages/EssayAttemptDetailPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -94,7 +95,22 @@ function AppRoutes() {
         }
       />
       <Route element={<AppLayout />}>
-        <Route path="/essay-grader" element={<EssayGraderPage />} />
+        <Route
+          path="/essay-grader"
+          element={
+            <ProtectedRoute>
+              <EssayGraderPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/essay-grader/history/:id"
+          element={
+            <ProtectedRoute>
+              <EssayAttemptDetailPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />

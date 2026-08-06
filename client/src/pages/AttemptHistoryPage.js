@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAttemptHistory, deleteAttempt } from '../api/speaking';
+import { fetchEssayHistory, deleteEssayAttempt } from '../api/writing';
 import BandTrendChart from '../components/speaking/BandTrendChart';
 import StatTile from '../components/StatTile';
+
+const SECTION_LABELS = {
+  introduction: 'Introduction',
+  main_body: 'Main Body Paragraph',
+  conclusion: 'Conclusion',
+};
 
 function roundToHalfBand(value) {
   return Math.round(value * 2) / 2;
@@ -11,11 +18,16 @@ function roundToHalfBand(value) {
 export default function AttemptHistoryPage() {
   const [attempts, setAttempts] = useState(null);
   const [error, setError] = useState(null);
+  const [essayAttempts, setEssayAttempts] = useState(null);
+  const [essayError, setEssayError] = useState(null);
 
   function load() {
     fetchAttemptHistory()
       .then(setAttempts)
       .catch((err) => setError(err.message));
+    fetchEssayHistory()
+      .then(setEssayAttempts)
+      .catch((err) => setEssayError(err.message));
   }
 
   useEffect(load, []);
@@ -29,7 +41,23 @@ export default function AttemptHistoryPage() {
     }
   }
 
+  async function handleEssayDelete(id) {
+    try {
+      await deleteEssayAttempt(id);
+      setEssayAttempts((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      setEssayError(err.message);
+    }
+  }
+
   const hasAttempts = attempts && attempts.length > 0;
+  const hasEssayAttempts = essayAttempts && essayAttempts.length > 0;
+  const essayAverage = hasEssayAttempts
+    ? roundToHalfBand(essayAttempts.reduce((sum, a) => sum + a.overallBand, 0) / essayAttempts.length)
+    : null;
+  const essayLatest = hasEssayAttempts ? essayAttempts[0] : null;
+  const essayPrevious = essayAttempts && essayAttempts.length > 1 ? essayAttempts[1] : null;
+  const essayBest = hasEssayAttempts ? Math.max(...essayAttempts.map((a) => a.overallBand)) : null;
   // Attempts arrive newest-first from the API.
   const latest = hasAttempts ? attempts[0] : null;
   const previous = attempts && attempts.length > 1 ? attempts[1] : null;
@@ -43,10 +71,11 @@ export default function AttemptHistoryPage() {
       <header className="app-header">
         <h1>Dashboard</h1>
         <p className="app-subtitle">
-          Your speaking practice history and band trend over time. Essay grading doesn't save
-          attempts, so this covers speaking practice only.
+          Your speaking and essay grading history, and your band trend over time.
         </p>
       </header>
+
+      <h2>Speaking Practice</h2>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -99,6 +128,66 @@ export default function AttemptHistoryPage() {
                         View
                       </Link>
                       <button type="button" className="btn-secondary" onClick={() => handleDelete(a.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <h2>Essay Grading</h2>
+
+      {essayError && <div className="error-banner">{essayError}</div>}
+
+      {essayAttempts && essayAttempts.length === 0 && (
+        <div className="dashboard-empty">
+          No essay attempts yet. Grade an essay or practice a section to see your progress here.
+        </div>
+      )}
+
+      {hasEssayAttempts && (
+        <>
+          <div className="dashboard-stats">
+            <StatTile label="Total attempts" value={essayAttempts.length} />
+            <StatTile label="Average band" value={essayAverage} />
+            <StatTile
+              label="Latest band"
+              value={essayLatest.overallBand}
+              delta={essayPrevious ? essayLatest.overallBand - essayPrevious.overallBand : undefined}
+            />
+            <StatTile label="Best band" value={essayBest} />
+          </div>
+
+          <div className="dashboard-section">
+            <h3>Recent attempts</h3>
+            <table className="attempt-history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Task</th>
+                  <th>Mode</th>
+                  <th>Overall Band</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {essayAttempts.map((a) => (
+                  <tr key={a.id}>
+                    <td>{new Date(a.createdAt.replace(' ', 'T') + 'Z').toLocaleString()}</td>
+                    <td>{a.taskType === 'task1' ? 'Task 1' : 'Task 2'}</td>
+                    <td>{a.mode === 'full' ? 'Full Essay' : `Section — ${SECTION_LABELS[a.section] ?? a.section}`}</td>
+                    <td>
+                      <span className="band-badge">{a.overallBand}</span>
+                    </td>
+                    <td className="attempt-history-actions">
+                      <Link to={`/essay-grader/history/${a.id}`} className="btn-secondary">
+                        View
+                      </Link>
+                      <button type="button" className="btn-secondary" onClick={() => handleEssayDelete(a.id)}>
                         Delete
                       </button>
                     </td>

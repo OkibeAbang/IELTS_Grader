@@ -25,3 +25,17 @@ export async function generatePrompt({ taskType, topic }) {
     body: JSON.stringify({ taskType, topic }),
   });
 }
+
+export async function fetchEssayHistory() {
+  const data = await requestJson('/api/essays');
+  return data.attempts;
+}
+
+export async function fetchEssayAttemptDetail(id) {
+  const data = await requestJson(`/api/essays/${encodeURIComponent(id)}`);
+  return data.attempt;
+}
+
+export async function deleteEssayAttempt(id) {
+  await requestJson(`/api/essays/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

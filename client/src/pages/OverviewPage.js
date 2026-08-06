@@ -4,19 +4,19 @@ const CHECKLIST = [
   'Full essay grading for Writing Task 1 & 2, or practice one section at a time',
   'Record real IELTS Speaking Parts 1–3 and get a rubric-based band score',
   'Criterion-by-criterion feedback: Task Response, Coherence, Lexical Resource, Grammar, Fluency, Pronunciation',
-  'Track your speaking scores over time on a personal dashboard',
+  'Track every essay and speaking score over time on a personal dashboard',
 ];
 
 const TOOLS = [
   {
     title: 'Essay Grading',
-    body: 'Paste a Task 1 or Task 2 response and get a band score with detailed, criterion-by-criterion feedback in seconds. No account needed.',
+    body: 'Paste a Task 1 or Task 2 response and get a band score with detailed, criterion-by-criterion feedback in seconds. Every attempt is saved to your dashboard so you can track your progress.',
     cta: 'Grade my essay',
     to: '/essay-grader',
   },
   {
     title: 'Speaking Practice',
-    body: 'Pick a real past IELTS speaking topic, record your answer for all three parts, and get graded against the official speaking rubric.',
+    body: 'Pick a real past IELTS speaking topic, record your answer for all three parts, and get graded against the official speaking rubric. Free account required for both tools.',
     cta: 'Start speaking practice',
     to: '/speaking',
   },
