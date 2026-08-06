@@ -6,8 +6,14 @@ import { findById } from "../models/users.js";
  * account can't run up API usage. Verification status isn't in the JWT
  * (would go stale between issue and revocation), so this re-reads it.
  */
-function requireVerifiedEmail(req, res, next) {
-  const user = findById(req.user.id);
+async function requireVerifiedEmail(req, res, next) {
+  let user;
+  try {
+    user = await findById(req.user.id);
+  } catch (err) {
+    console.error("requireVerifiedEmail lookup failed:", err.message);
+    return res.status(502).json({ error: "Could not verify your account. Please try again." });
+  }
   if (!user) {
     return res.status(401).json({ error: "Not signed in" });
   }

@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import crypto from "node:crypto";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -19,7 +18,7 @@ import {
   findAttemptById,
   deleteAttempt,
 } from "../models/speakingAttempts.js";
-import { deleteAttemptAudio, resolveAudioPath } from "../audioStorage.js";
+import { deleteAttemptAudio, streamAttemptAudio } from "../audioStorage.js";
 
 const router = express.Router();
 
@@ -88,74 +87,115 @@ router.get("/me", (req, res) => {
 // Everything below requires a valid admin session.
 router.use(requireAdmin);
 
-router.get("/stats", (_req, res) => {
-  const since7d = isoDaysAgo(7);
-  res.json({
-    totalUsers: countUsers(),
-    totalAttempts: countAttempts(),
-    newUsersLast7Days: countUsersSince(since7d),
-    attemptsLast7Days: countAttemptsSince(since7d),
-    averageOverallBand: averageOverallBand(),
-    recentUsers: listAllUsers().slice(0, 5),
-    recentAttempts: listAllAttempts({ limit: 5 }),
-  });
+router.get("/stats", async (_req, res) => {
+  try {
+    const since7d = isoDaysAgo(7);
+    const [totalUsers, totalAttempts, newUsersLast7Days, attemptsLast7Days, avgBand, recentUsers, recentAttempts] =
+      await Promise.all([
+        countUsers(),
+        countAttempts(),
+        countUsersSince(since7d),
+        countAttemptsSince(since7d),
+        averageOverallBand(),
+        listAllUsers(),
+        listAllAttempts({ limit: 5 }),
+      ]);
+    res.json({
+      totalUsers,
+      totalAttempts,
+      newUsersLast7Days,
+      attemptsLast7Days,
+      averageOverallBand: avgBand,
+      recentUsers: recentUsers.slice(0, 5),
+      recentAttempts,
+    });
+  } catch (err) {
+    console.error("Loading admin stats failed:", err);
+    res.status(502).json({ error: "Could not load stats. Please try again." });
+  }
 });
 
-router.get("/users", (_req, res) => {
-  res.json({ users: listAllUsers() });
+router.get("/users", async (_req, res) => {
+  try {
+    res.json({ users: await listAllUsers() });
+  } catch (err) {
+    console.error("Listing users failed:", err);
+    res.status(502).json({ error: "Could not load users. Please try again." });
+  }
 });
 
-router.delete("/users/:id", (req, res) => {
-  const userId = Number(req.params.id);
-  const user = findById(userId);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
+router.delete("/users/:id", async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const user = await findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-  const attempts = listFullAttemptsForUser(userId);
-  for (const attempt of attempts) {
-    deleteAttemptAudio(attempt);
-    deleteAttempt(attempt.id);
+    const attempts = await listFullAttemptsForUser(userId);
+    for (const attempt of attempts) {
+      await deleteAttemptAudio(attempt);
+      await deleteAttempt(attempt.id);
+    }
+    await deleteUser(userId);
+    res.status(204).end();
+  } catch (err) {
+    console.error("Deleting user failed:", err);
+    res.status(502).json({ error: "Could not delete this user. Please try again." });
   }
-  deleteUser(userId);
-  res.status(204).end();
 });
 
-router.get("/attempts", (req, res) => {
-  const limit = Math.min(Number(req.query.limit) || 50, 200);
-  const offset = Number(req.query.offset) || 0;
-  res.json({ attempts: listAllAttempts({ limit, offset }), total: countAttempts() });
+router.get("/attempts", async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Number(req.query.offset) || 0;
+    const [attempts, total] = await Promise.all([listAllAttempts({ limit, offset }), countAttempts()]);
+    res.json({ attempts, total });
+  } catch (err) {
+    console.error("Listing admin attempts failed:", err);
+    res.status(502).json({ error: "Could not load attempts. Please try again." });
+  }
 });
 
-router.get("/attempts/:id", (req, res) => {
-  const attempt = findAttemptById(req.params.id);
-  if (!attempt) {
-    return res.status(404).json({ error: "Attempt not found" });
+router.get("/attempts/:id", async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    res.json({
+      attempt: {
+        ...attempt.rawGraderResult,
+        attemptId: attempt.id,
+        userId: attempt.userId,
+        topicLabel: attempt.topicLabel,
+        targetBand: attempt.targetBand,
+        createdAt: attempt.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error("Loading admin attempt failed:", err);
+    res.status(502).json({ error: "Could not load this attempt. Please try again." });
   }
-  res.json({
-    attempt: {
-      ...attempt.rawGraderResult,
-      attemptId: attempt.id,
-      userId: attempt.userId,
-      topicLabel: attempt.topicLabel,
-      targetBand: attempt.targetBand,
-      createdAt: attempt.createdAt,
-    },
-  });
 });
 
-router.get("/attempts/:id/audio/:part", (req, res) => {
-  const attempt = findAttemptById(req.params.id);
-  if (!attempt) {
-    return res.status(404).json({ error: "Attempt not found" });
+router.get("/attempts/:id/audio/:part", async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    const pathKey = `${req.params.part}AudioPath`;
+    const key = attempt[pathKey];
+    if (!key) {
+      return res.status(404).json({ error: "Audio part not found" });
+    }
+    res.set("Content-Type", "audio/wav");
+    await streamAttemptAudio(key, res);
+  } catch (err) {
+    console.error("Streaming admin audio failed:", err);
+    if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });
   }
-  const pathKey = `${req.params.part}AudioPath`;
-  const relativePath = attempt[pathKey];
-  if (!relativePath) {
-    return res.status(404).json({ error: "Audio part not found" });
-  }
-  res.set("Content-Type", "audio/wav");
-  fs.createReadStream(resolveAudioPath(relativePath)).pipe(res);
 });
 
 export { router as adminRouter };

@@ -1,11 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";
+import { Groq } from "groq-sdk";
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 const MODEL = "gemini-flash-latest";
 const CLAUDE_MODEL = "claude-opus-5";
+// Groq's free tier (no card required) — tried before Claude (paid, no free
+// tier) since the whole point of this fallback is staying free. See
+// REMINDERS.md for why: Gemini's free tier caps at 20 requests/day/model,
+// which testing alone hits routinely; Groq's is 14,400/day.
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 function extractJson(text) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -19,10 +26,25 @@ function isRetryableGeminiError(err) {
 }
 
 /**
- * Text-only fallback used when Gemini's quota/capacity is exhausted. Claude's
- * Messages API has no audio content type, so this only ever runs for plain
- * text calls (contents-based/audio calls skip it entirely — see generateJson).
+ * Text-only fallbacks used when Gemini's quota/capacity is exhausted. Neither
+ * provider's chat API has an audio content type, so these only ever run for
+ * plain text calls (contents-based/audio calls skip fallback entirely — see
+ * generateJson).
  */
+async function generateJsonWithGroq({ systemPrompt, userMessage, maxOutputTokens }) {
+  const response = await groq.chat.completions.create({
+    model: GROQ_MODEL,
+    max_completion_tokens: maxOutputTokens,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ],
+  });
+
+  return extractJson(response.choices[0].message.content);
+}
+
 async function generateJsonWithClaude({ systemPrompt, userMessage, maxOutputTokens }) {
   const response = await anthropic.messages.create({
     model: CLAUDE_MODEL,
@@ -49,11 +71,28 @@ async function generateJson({ systemPrompt, userMessage, contents, maxOutputToke
 
     return extractJson(response.text);
   } catch (err) {
-    if (contents || !anthropic || !isRetryableGeminiError(err)) {
+    if (contents || !isRetryableGeminiError(err)) {
       throw err;
     }
-    console.warn(`Gemini unavailable (status ${err.status}), falling back to Claude:`, err.message);
-    return generateJsonWithClaude({ systemPrompt, userMessage, maxOutputTokens });
+
+    // Free option first, paid option second — only reachable at all once
+    // Gemini's own free tier is exhausted or briefly overloaded.
+    if (groq) {
+      try {
+        console.warn(`Gemini unavailable (status ${err.status}), falling back to Groq (free):`, err.message);
+        return await generateJsonWithGroq({ systemPrompt, userMessage, maxOutputTokens });
+      } catch (groqErr) {
+        console.warn("Groq fallback failed:", groqErr.message);
+        if (!anthropic) throw groqErr;
+      }
+    }
+
+    if (anthropic) {
+      console.warn(`Falling back to Claude:`, err.message);
+      return generateJsonWithClaude({ systemPrompt, userMessage, maxOutputTokens });
+    }
+
+    throw err;
   }
 }
 

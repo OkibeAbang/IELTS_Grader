@@ -1,29 +1,28 @@
 import fs from "node:fs";
 import path from "node:path";
-import initSqlJs from "sql.js";
+import { createClient } from "@libsql/client";
 
 /**
- * sql.js (WASM SQLite) instead of better-sqlite3: this machine has no working
- * native build toolchain (no prebuilt binary for this Node version, and the
- * installed Visual Studio Build Tools are missing the Windows SDK component
- * node-gyp needs), so a native addon can't be compiled. sql.js runs the same
- * synchronous query API entirely in WASM, at the cost of an async one-time
- * init and needing an explicit persist-to-disk step after writes, which is
- * wrapped here so callers never touch it directly.
+ * Turso (hosted libSQL, SQLite-compatible) instead of sql.js — Render's free
+ * tier has no persistent disk, so a file-backed DB was getting wiped on every
+ * sleep/wake cycle. Falls back to a local SQLite file (no Turso account
+ * needed) when TURSO_DATABASE_URL isn't set, so local dev stays zero-setup.
  */
 
-const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), "data", "ielts.db");
+const LOCAL_DB_PATH = path.join(process.cwd(), "data", "ielts.db");
+const usingLocalFile = !process.env.TURSO_DATABASE_URL;
 
-let db;
+if (usingLocalFile) {
+  fs.mkdirSync(path.dirname(LOCAL_DB_PATH), { recursive: true });
+}
+
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL || `file:${LOCAL_DB_PATH}`,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
 async function initDb() {
-  const SQL = await initSqlJs();
-
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  const fileBuffer = fs.existsSync(DB_PATH) ? fs.readFileSync(DB_PATH) : undefined;
-  db = new SQL.Database(fileBuffer);
-
-  db.run(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       email         TEXT NOT NULL UNIQUE,
@@ -31,8 +30,10 @@ async function initDb() {
       google_id     TEXT UNIQUE,
       display_name  TEXT,
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+    )
+  `);
 
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS speaking_attempts (
       id                  INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id             INTEGER NOT NULL REFERENCES users(id),
@@ -45,83 +46,75 @@ async function initDb() {
       overall_band        REAL NOT NULL,
       raw_grader_json      TEXT NOT NULL,
       created_at           TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-    CREATE INDEX IF NOT EXISTS idx_speaking_attempts_user ON speaking_attempts(user_id, created_at DESC);
+    )
   `);
 
-  ensureColumn("speaking_attempts", "target_band", "REAL");
-  ensureColumn("users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
-  ensureColumn("users", "verification_token", "TEXT");
-  ensureColumn("users", "verification_token_expires_at", "TEXT");
-  ensureColumn("users", "reset_token", "TEXT");
-  ensureColumn("users", "reset_token_expires_at", "TEXT");
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_speaking_attempts_user ON speaking_attempts(user_id, created_at DESC)`
+  );
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS essay_attempts (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id         INTEGER NOT NULL REFERENCES users(id),
+      mode            TEXT NOT NULL,
+      task_type       TEXT NOT NULL,
+      section         TEXT,
+      prompt_text     TEXT NOT NULL,
+      essay_text      TEXT NOT NULL,
+      overall_band    REAL NOT NULL,
+      raw_grader_json TEXT NOT NULL,
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_essay_attempts_user ON essay_attempts(user_id, created_at DESC)`
+  );
+
+  await ensureColumn("speaking_attempts", "target_band", "REAL");
+  await ensureColumn("users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
+  await ensureColumn("users", "verification_token", "TEXT");
+  await ensureColumn("users", "verification_token_expires_at", "TEXT");
+  await ensureColumn("users", "reset_token", "TEXT");
+  await ensureColumn("users", "reset_token_expires_at", "TEXT");
 
   // Signup now auto-verifies (see routes/auth.js) since with no SMTP set up,
   // the old verification email never reached anyone. Backfill accounts stuck
   // unverified from before that change; leave Google-linked rows alone since
   // their verified flag reflects what Google itself reported.
-  db.run(`UPDATE users SET email_verified = 1 WHERE email_verified = 0 AND google_id IS NULL`);
-
-  persist();
-  return db;
+  await run(`UPDATE users SET email_verified = 1 WHERE email_verified = 0 AND google_id IS NULL`);
 }
 
 /**
  * Adds a column to an existing table if it isn't there yet. SQLite has no
  * "ADD COLUMN IF NOT EXISTS", and CREATE TABLE IF NOT EXISTS above is a
- * no-op once the table already exists on disk — this is what actually lets
- * the schema evolve without deleting existing local data on every change.
+ * no-op once the table already exists — this is what actually lets the
+ * schema evolve without losing existing data on every change.
  */
-function ensureColumn(table, column, definition) {
-  const existing = queryAll(`PRAGMA table_info(${table})`).map((c) => c.name);
+async function ensureColumn(table, column, definition) {
+  const existing = (await queryAll(`PRAGMA table_info(${table})`)).map((c) => c.name);
   if (!existing.includes(column)) {
-    db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    await client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
 
-function persist() {
-  const data = db.export();
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
-}
-
-function getDb() {
-  if (!db) {
-    throw new Error("Database not initialized — call initDb() before using getDb()");
-  }
-  return db;
-}
-
-/**
- * Runs an INSERT/UPDATE/DELETE and persists the change to disk.
- * Returns the rowid of the last insert on this connection — must be read
- * before persist()/export(), which resets sql.js's last_insert_rowid() to 0.
- */
-function run(sql, params = []) {
-  getDb().run(sql, params);
-  const id = queryOne("SELECT last_insert_rowid() AS id").id;
-  persist();
-  return id;
+/** Runs an INSERT/UPDATE/DELETE. Returns the inserted row's id (0 for non-inserts). */
+async function run(sql, params = []) {
+  const result = await client.execute({ sql, args: params });
+  return Number(result.lastInsertRowid ?? 0);
 }
 
 /** Runs a SELECT and returns the first matching row as a plain object, or undefined. */
-function queryOne(sql, params = []) {
-  const stmt = getDb().prepare(sql);
-  stmt.bind(params);
-  const row = stmt.step() ? stmt.getAsObject() : undefined;
-  stmt.free();
-  return row;
+async function queryOne(sql, params = []) {
+  const result = await client.execute({ sql, args: params });
+  return result.rows[0];
 }
 
 /** Runs a SELECT and returns all matching rows as plain objects. */
-function queryAll(sql, params = []) {
-  const stmt = getDb().prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return rows;
+async function queryAll(sql, params = []) {
+  const result = await client.execute({ sql, args: params });
+  return result.rows;
 }
 
-export { initDb, getDb, run, queryOne, queryAll, DB_PATH };
+export { initDb, run, queryOne, queryAll };

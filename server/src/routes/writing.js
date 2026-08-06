@@ -3,10 +3,13 @@ import { gradeEssay } from "../grade.js";
 import { gradeSection } from "../gradeSection.js";
 import { getPromptBank } from "../promptBank.js";
 import { generatePrompt } from "../generatePrompt.js";
+import { requireAuth } from "../middleware/requireAuth.js";
+import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
+import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/essayAttempts.js";
 
 const router = express.Router();
 
-router.post("/grade", async (req, res) => {
+router.post("/grade", requireAuth, requireVerifiedEmail, async (req, res) => {
   const { essay, prompt, taskType } = req.body ?? {};
 
   if (typeof essay !== "string" || !essay.trim()) {
@@ -21,14 +24,23 @@ router.post("/grade", async (req, res) => {
 
   try {
     const result = await gradeEssay({ essay, prompt, taskType });
-    res.json(result);
+    const attempt = await createAttempt({
+      userId: req.user.id,
+      mode: "full",
+      taskType,
+      promptText: prompt,
+      essayText: essay,
+      overallBand: result.overall_band,
+      rawGraderResult: result,
+    });
+    res.json({ ...result, attemptId: attempt.id });
   } catch (err) {
     console.error("Grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
   }
 });
 
-router.post("/grade-section", async (req, res) => {
+router.post("/grade-section", requireAuth, requireVerifiedEmail, async (req, res) => {
   const { text, prompt, taskType, section } = req.body ?? {};
 
   if (typeof text !== "string" || !text.trim()) {
@@ -46,7 +58,17 @@ router.post("/grade-section", async (req, res) => {
 
   try {
     const result = await gradeSection({ text, prompt, taskType, section });
-    res.json(result);
+    const attempt = await createAttempt({
+      userId: req.user.id,
+      mode: "section",
+      taskType,
+      section,
+      promptText: prompt,
+      essayText: text,
+      overallBand: result.provisional_overall_band,
+      rawGraderResult: result,
+    });
+    res.json({ ...result, attemptId: attempt.id });
   } catch (err) {
     console.error("Section grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
@@ -63,7 +85,7 @@ router.get("/prompts", (req, res) => {
   res.json({ prompts: getPromptBank(taskType) });
 });
 
-router.post("/prompts/generate", async (req, res) => {
+router.post("/prompts/generate", requireAuth, async (req, res) => {
   const { taskType, topic } = req.body ?? {};
 
   if (!["task1", "task2"].includes(taskType)) {
@@ -76,6 +98,53 @@ router.post("/prompts/generate", async (req, res) => {
   } catch (err) {
     console.error("Prompt generation failed:", err);
     res.status(502).json({ error: "Question generation failed. Please try again." });
+  }
+});
+
+router.get("/essays", requireAuth, async (req, res) => {
+  try {
+    res.json({ attempts: await listAttemptsForUser(req.user.id) });
+  } catch (err) {
+    console.error("Listing essay attempts failed:", err);
+    res.status(502).json({ error: "Could not load your essay history. Please try again." });
+  }
+});
+
+router.get("/essays/:id", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    res.json({
+      attempt: {
+        ...attempt.rawGraderResult,
+        attemptId: attempt.id,
+        mode: attempt.mode,
+        taskType: attempt.taskType,
+        section: attempt.section,
+        promptText: attempt.promptText,
+        essayText: attempt.essayText,
+        createdAt: attempt.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error("Loading essay attempt failed:", err);
+    res.status(502).json({ error: "Could not load this attempt. Please try again." });
+  }
+});
+
+router.delete("/essays/:id", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    await deleteAttempt(attempt.id);
+    res.status(204).end();
+  } catch (err) {
+    console.error("Deleting essay attempt failed:", err);
+    res.status(502).json({ error: "Could not delete this attempt. Please try again." });
   }
 });
 

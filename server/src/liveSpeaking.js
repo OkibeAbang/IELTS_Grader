@@ -147,7 +147,7 @@ async function handleConnection(ws, userId) {
 function attachLiveSpeaking(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
 
-  httpServer.on("upgrade", (req, socket, head) => {
+  httpServer.on("upgrade", async (req, socket, head) => {
     const url = new URL(req.url, "http://internal");
     if (url.pathname !== "/ws/speaking/live") {
       return; // not ours — let any other upgrade handler (none today) or the default deal with it
@@ -155,7 +155,15 @@ function attachLiveSpeaking(httpServer) {
 
     const ticket = url.searchParams.get("ticket");
     const userId = ticket ? consumeTicket(ticket) : null;
-    if (!userId || !findById(userId)) {
+
+    let user = null;
+    try {
+      user = userId ? await findById(userId) : null;
+    } catch (err) {
+      console.error("Live voice ticket lookup failed:", err.message);
+    }
+
+    if (!user) {
       socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
       socket.destroy();
       return;

@@ -1,11 +1,10 @@
-import fs from "node:fs";
 import express from "express";
 import multer from "multer";
 import { getSpeakingTopicBank, getSpeakingTopic } from "../speakingQuestionBank.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
 import { gradeSpeaking } from "../gradeSpeaking.js";
-import { saveAttemptAudio, resolveAudioPath, deleteAttemptAudio } from "../audioStorage.js";
+import { saveAttemptAudio, streamAttemptAudio, deleteAttemptAudio } from "../audioStorage.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/speakingAttempts.js";
 import { createLiveTicket } from "../liveSpeaking.js";
 
@@ -87,8 +86,8 @@ router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (
     });
     const { wavBuffers, ...gradedResult } = result;
 
-    const audioPaths = saveAttemptAudio(req.user.id, wavBuffers);
-    const attempt = createAttempt({
+    const audioPaths = await saveAttemptAudio(req.user.id, wavBuffers);
+    const attempt = await createAttempt({
       userId: req.user.id,
       topicId: topic.id,
       topicLabel: topic.topic,
@@ -106,48 +105,68 @@ router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (
   }
 });
 
-router.get("/attempts", requireAuth, (req, res) => {
-  res.json({ attempts: listAttemptsForUser(req.user.id) });
+router.get("/attempts", requireAuth, async (req, res) => {
+  try {
+    res.json({ attempts: await listAttemptsForUser(req.user.id) });
+  } catch (err) {
+    console.error("Listing attempts failed:", err);
+    res.status(502).json({ error: "Could not load your attempts. Please try again." });
+  }
 });
 
-router.get("/attempts/:id", requireAuth, (req, res) => {
-  const attempt = findAttemptById(req.params.id);
-  if (!attempt || attempt.userId !== req.user.id) {
-    return res.status(404).json({ error: "Attempt not found" });
+router.get("/attempts/:id", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    res.json({
+      attempt: {
+        ...attempt.rawGraderResult,
+        attemptId: attempt.id,
+        topicLabel: attempt.topicLabel,
+        targetBand: attempt.targetBand,
+        createdAt: attempt.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error("Loading attempt failed:", err);
+    res.status(502).json({ error: "Could not load this attempt. Please try again." });
   }
-  res.json({
-    attempt: {
-      ...attempt.rawGraderResult,
-      attemptId: attempt.id,
-      topicLabel: attempt.topicLabel,
-      targetBand: attempt.targetBand,
-      createdAt: attempt.createdAt,
-    },
-  });
 });
 
-router.delete("/attempts/:id", requireAuth, (req, res) => {
-  const attempt = findAttemptById(req.params.id);
-  if (!attempt || attempt.userId !== req.user.id) {
-    return res.status(404).json({ error: "Attempt not found" });
+router.delete("/attempts/:id", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    await deleteAttemptAudio(attempt);
+    await deleteAttempt(attempt.id);
+    res.status(204).end();
+  } catch (err) {
+    console.error("Deleting attempt failed:", err);
+    res.status(502).json({ error: "Could not delete this attempt. Please try again." });
   }
-  deleteAttemptAudio(attempt);
-  deleteAttempt(attempt.id);
-  res.status(204).end();
 });
 
-router.get("/attempts/:id/audio/:part", requireAuth, (req, res) => {
-  const attempt = findAttemptById(req.params.id);
-  if (!attempt || attempt.userId !== req.user.id) {
-    return res.status(404).json({ error: "Attempt not found" });
+router.get("/attempts/:id/audio/:part", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    const pathKey = `${req.params.part}AudioPath`;
+    const key = attempt[pathKey];
+    if (!key) {
+      return res.status(404).json({ error: "Audio part not found" });
+    }
+    res.set("Content-Type", "audio/wav");
+    await streamAttemptAudio(key, res);
+  } catch (err) {
+    console.error("Streaming audio failed:", err);
+    if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });
   }
-  const pathKey = `${req.params.part}AudioPath`;
-  const relativePath = attempt[pathKey];
-  if (!relativePath) {
-    return res.status(404).json({ error: "Audio part not found" });
-  }
-  res.set("Content-Type", "audio/wav");
-  fs.createReadStream(resolveAudioPath(relativePath)).pipe(res);
 });
 
 export { router as speakingRouter };

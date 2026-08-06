@@ -68,16 +68,16 @@ router.post("/signup", authLimiter, async (req, res) => {
     return res.status(400).json({ error: "Password must be at least 8 characters" });
   }
 
-  if (findByEmail(email)) {
-    return res.status(409).json({ error: "An account with this email already exists" });
-  }
-
   try {
+    if (await findByEmail(email)) {
+      return res.status(409).json({ error: "An account with this email already exists" });
+    }
+
     const passwordHash = await hashPassword(password);
     // Auto-verified: with no SMTP configured, the verification email only
     // ever reached the server console, permanently blocking every real user
     // from the (paid, Gemini-backed) speaking grading endpoint.
-    const user = createUser({ email, passwordHash, emailVerified: true });
+    const user = await createUser({ email, passwordHash, emailVerified: true });
 
     setSessionCookie(res, user);
     res.status(201).json({ user: toPublicUser(user) });
@@ -94,12 +94,12 @@ router.post("/login", authLimiter, async (req, res) => {
     return res.status(400).json({ error: "email and password are required" });
   }
 
-  const user = findByEmail(email);
-  if (!user || !user.password_hash) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-
   try {
+    const user = await findByEmail(email);
+    if (!user || !user.password_hash) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: "Invalid email or password" });
@@ -132,10 +132,11 @@ router.post("/google", async (req, res) => {
     const email = payload.email;
     const displayName = payload.name ?? null;
 
-    let user = findByGoogleId(googleId) || findByEmail(email);
+    let user = await findByGoogleId(googleId);
+    if (!user) user = await findByEmail(email);
     if (!user) {
       // Google has already verified this email as part of its own signup flow.
-      user = createUser({ email, googleId, displayName, emailVerified: !!payload.email_verified });
+      user = await createUser({ email, googleId, displayName, emailVerified: !!payload.email_verified });
     }
 
     setSessionCookie(res, user);
@@ -151,7 +152,7 @@ router.post("/logout", (_req, res) => {
   res.json({ ok: true });
 });
 
-router.get("/session", (req, res) => {
+router.get("/session", async (req, res) => {
   const token = req.cookies?.[SESSION_COOKIE_NAME];
   if (!token) {
     return res.json({ user: null });
@@ -159,7 +160,7 @@ router.get("/session", (req, res) => {
 
   try {
     const payload = verifySession(token);
-    const user = findById(payload.sub);
+    const user = await findById(payload.sub);
     res.json({ user: user ? toPublicUser(user) : null });
   } catch {
     res.json({ user: null });
@@ -172,27 +173,32 @@ router.post("/verify-email", async (req, res) => {
     return res.status(400).json({ error: "token is required" });
   }
 
-  const user = verifyEmailByToken(token);
-  if (!user) {
-    return res.status(400).json({ error: "This verification link is invalid or has expired." });
-  }
+  try {
+    const user = await verifyEmailByToken(token);
+    if (!user) {
+      return res.status(400).json({ error: "This verification link is invalid or has expired." });
+    }
 
-  setSessionCookie(res, user);
-  res.json({ user: toPublicUser(user) });
+    setSessionCookie(res, user);
+    res.json({ user: toPublicUser(user) });
+  } catch (err) {
+    console.error("Email verification failed:", err);
+    res.status(502).json({ error: "Verification failed. Please try again." });
+  }
 });
 
 router.post("/resend-verification", requireAuth, async (req, res) => {
-  const user = findById(req.user.id);
-  if (!user) {
-    return res.status(404).json({ error: "Account not found" });
-  }
-  if (user.email_verified) {
-    return res.json({ ok: true, alreadyVerified: true });
-  }
-
   try {
+    const user = await findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "Account not found" });
+    }
+    if (user.email_verified) {
+      return res.json({ ok: true, alreadyVerified: true });
+    }
+
     const token = generateToken();
-    setVerificationToken(user.id, token, isoInMs(VERIFICATION_TOKEN_TTL_MS));
+    await setVerificationToken(user.id, token, isoInMs(VERIFICATION_TOKEN_TTL_MS));
     await sendVerificationEmail(user, token);
     res.json({ ok: true });
   } catch (err) {
@@ -207,16 +213,16 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
     return res.status(400).json({ error: "A valid email is required" });
   }
 
-  const user = findByEmail(email);
-  // Always report success — confirming whether an email exists is its own leak.
-  if (user && user.password_hash) {
-    try {
+  try {
+    const user = await findByEmail(email);
+    // Always report success — confirming whether an email exists is its own leak.
+    if (user && user.password_hash) {
       const token = generateToken();
-      setResetToken(user.id, token, isoInMs(RESET_TOKEN_TTL_MS));
+      await setResetToken(user.id, token, isoInMs(RESET_TOKEN_TTL_MS));
       await sendPasswordResetEmail(user, token);
-    } catch (err) {
-      console.error("Sending password reset email failed:", err);
     }
+  } catch (err) {
+    console.error("Sending password reset email failed:", err);
   }
 
   res.json({ ok: true });
@@ -231,16 +237,21 @@ router.post("/reset-password", async (req, res) => {
     return res.status(400).json({ error: "Password must be at least 8 characters" });
   }
 
-  const user = findByResetToken(token);
-  if (!user) {
-    return res.status(400).json({ error: "This reset link is invalid or has expired." });
+  try {
+    const user = await findByResetToken(token);
+    if (!user) {
+      return res.status(400).json({ error: "This reset link is invalid or has expired." });
+    }
+
+    const passwordHash = await hashPassword(password);
+    await resetPassword(user.id, passwordHash);
+
+    setSessionCookie(res, user);
+    res.json({ user: toPublicUser(user) });
+  } catch (err) {
+    console.error("Password reset failed:", err);
+    res.status(502).json({ error: "Password reset failed. Please try again." });
   }
-
-  const passwordHash = await hashPassword(password);
-  resetPassword(user.id, passwordHash);
-
-  setSessionCookie(res, user);
-  res.json({ user: toPublicUser(user) });
 });
 
 export { router as authRouter };

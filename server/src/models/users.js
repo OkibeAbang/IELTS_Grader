@@ -2,64 +2,64 @@ import { run, queryOne, queryAll } from "../db.js";
 
 const PUBLIC_FIELDS = "id, email, display_name, email_verified, created_at";
 
-function createUser({ email, passwordHash = null, googleId = null, displayName = null, emailVerified = false }) {
-  const id = run(
+async function createUser({ email, passwordHash = null, googleId = null, displayName = null, emailVerified = false }) {
+  const id = await run(
     `INSERT INTO users (email, password_hash, google_id, display_name, email_verified) VALUES (?, ?, ?, ?, ?)`,
     [email, passwordHash, googleId, displayName, emailVerified ? 1 : 0]
   );
   return findById(id);
 }
 
-function findByEmail(email) {
+async function findByEmail(email) {
   return queryOne(`SELECT * FROM users WHERE email = ?`, [email]);
 }
 
-function findByGoogleId(googleId) {
+async function findByGoogleId(googleId) {
   return queryOne(`SELECT * FROM users WHERE google_id = ?`, [googleId]);
 }
 
-function findById(id) {
+async function findById(id) {
   return queryOne(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [id]);
 }
 
-function setVerificationToken(userId, token, expiresAt) {
-  run(`UPDATE users SET verification_token = ?, verification_token_expires_at = ? WHERE id = ?`, [
+async function setVerificationToken(userId, token, expiresAt) {
+  await run(`UPDATE users SET verification_token = ?, verification_token_expires_at = ? WHERE id = ?`, [
     token,
     expiresAt,
     userId,
   ]);
 }
 
-function verifyEmailByToken(token) {
-  const user = queryOne(
+async function verifyEmailByToken(token) {
+  const user = await queryOne(
     `SELECT * FROM users WHERE verification_token = ? AND verification_token_expires_at > datetime('now')`,
     [token]
   );
   if (!user) return null;
 
-  run(`UPDATE users SET email_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?`, [
+  await run(`UPDATE users SET email_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?`, [
     user.id,
   ]);
   return findById(user.id);
 }
 
-function setResetToken(userId, token, expiresAt) {
-  run(`UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?`, [token, expiresAt, userId]);
+async function setResetToken(userId, token, expiresAt) {
+  await run(`UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?`, [token, expiresAt, userId]);
 }
 
-function findByResetToken(token) {
+async function findByResetToken(token) {
   return queryOne(`SELECT * FROM users WHERE reset_token = ? AND reset_token_expires_at > datetime('now')`, [token]);
 }
 
-function resetPassword(userId, passwordHash) {
-  run(`UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?`, [
+async function resetPassword(userId, passwordHash) {
+  await run(`UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?`, [
     passwordHash,
     userId,
   ]);
 }
 
-function listAllUsers() {
-  const rows = queryAll(
+async function listAllUsers() {
+  const rows = await queryAll(
     `SELECT u.id, u.email, u.display_name, u.email_verified, u.google_id, u.created_at,
             COUNT(sa.id) AS attempt_count
      FROM users u
@@ -78,16 +78,18 @@ function listAllUsers() {
   }));
 }
 
-function deleteUser(id) {
-  run(`DELETE FROM users WHERE id = ?`, [id]);
+async function deleteUser(id) {
+  await run(`DELETE FROM users WHERE id = ?`, [id]);
 }
 
-function countUsers() {
-  return queryOne(`SELECT COUNT(*) AS count FROM users`).count;
+async function countUsers() {
+  const row = await queryOne(`SELECT COUNT(*) AS count FROM users`);
+  return row.count;
 }
 
-function countUsersSince(isoDate) {
-  return queryOne(`SELECT COUNT(*) AS count FROM users WHERE created_at >= ?`, [isoDate]).count;
+async function countUsersSince(isoDate) {
+  const row = await queryOne(`SELECT COUNT(*) AS count FROM users WHERE created_at >= ?`, [isoDate]);
+  return row.count;
 }
 
 export {

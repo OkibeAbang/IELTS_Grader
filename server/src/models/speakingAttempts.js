@@ -18,7 +18,7 @@ function toAttempt(row) {
   };
 }
 
-function createAttempt({
+async function createAttempt({
   userId,
   topicId,
   topicLabel,
@@ -30,7 +30,7 @@ function createAttempt({
   targetBand = null,
   rawGraderResult,
 }) {
-  const id = run(
+  const id = await run(
     `INSERT INTO speaking_attempts
       (user_id, topic_id, topic_label, part1_audio_path, part2_audio_path, part3_audio_path, criteria_json, overall_band, target_band, raw_grader_json)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -50,8 +50,8 @@ function createAttempt({
   return findAttemptById(id);
 }
 
-function listAttemptsForUser(userId) {
-  const rows = queryAll(
+async function listAttemptsForUser(userId) {
+  const rows = await queryAll(
     `SELECT id, topic_id, topic_label, overall_band, target_band, created_at
      FROM speaking_attempts WHERE user_id = ? ORDER BY created_at DESC`,
     [userId]
@@ -66,20 +66,21 @@ function listAttemptsForUser(userId) {
   }));
 }
 
-function findAttemptById(id) {
-  return toAttempt(queryOne(`SELECT * FROM speaking_attempts WHERE id = ?`, [id]));
+async function findAttemptById(id) {
+  return toAttempt(await queryOne(`SELECT * FROM speaking_attempts WHERE id = ?`, [id]));
 }
 
-function deleteAttempt(id) {
-  run(`DELETE FROM speaking_attempts WHERE id = ?`, [id]);
+async function deleteAttempt(id) {
+  await run(`DELETE FROM speaking_attempts WHERE id = ?`, [id]);
 }
 
-function listFullAttemptsForUser(userId) {
-  return queryAll(`SELECT * FROM speaking_attempts WHERE user_id = ?`, [userId]).map(toAttempt);
+async function listFullAttemptsForUser(userId) {
+  const rows = await queryAll(`SELECT * FROM speaking_attempts WHERE user_id = ?`, [userId]);
+  return rows.map(toAttempt);
 }
 
-function listAllAttempts({ limit = 50, offset = 0 } = {}) {
-  const rows = queryAll(
+async function listAllAttempts({ limit = 50, offset = 0 } = {}) {
+  const rows = await queryAll(
     `SELECT sa.id, sa.user_id, u.email AS user_email, sa.topic_id, sa.topic_label, sa.overall_band, sa.created_at
      FROM speaking_attempts sa
      JOIN users u ON u.id = sa.user_id
@@ -98,16 +99,18 @@ function listAllAttempts({ limit = 50, offset = 0 } = {}) {
   }));
 }
 
-function countAttempts() {
-  return queryOne(`SELECT COUNT(*) AS count FROM speaking_attempts`).count;
+async function countAttempts() {
+  const row = await queryOne(`SELECT COUNT(*) AS count FROM speaking_attempts`);
+  return row.count;
 }
 
-function countAttemptsSince(isoDate) {
-  return queryOne(`SELECT COUNT(*) AS count FROM speaking_attempts WHERE created_at >= ?`, [isoDate]).count;
+async function countAttemptsSince(isoDate) {
+  const row = await queryOne(`SELECT COUNT(*) AS count FROM speaking_attempts WHERE created_at >= ?`, [isoDate]);
+  return row.count;
 }
 
-function averageOverallBand() {
-  const row = queryOne(`SELECT AVG(overall_band) AS avg FROM speaking_attempts`);
+async function averageOverallBand() {
+  const row = await queryOne(`SELECT AVG(overall_band) AS avg FROM speaking_attempts`);
   return row.avg === null ? null : Math.round(row.avg * 10) / 10;
 }
 
