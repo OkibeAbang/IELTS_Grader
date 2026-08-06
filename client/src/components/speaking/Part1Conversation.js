@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { mergeAudioBlobs } from '../../utils/mergeAudioBlobs';
 import AudioVisualizer from './AudioVisualizer';
@@ -9,14 +9,96 @@ function formatTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+function speak(text, { onStart, onEnd }) {
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.95;
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    onEnd();
+  };
+
+  utterance.onstart = onStart;
+  utterance.onend = finish;
+  utterance.onerror = finish;
+  window.speechSynthesis.speak(utterance);
+
+  // Safety net: some environments (e.g. no TTS voices installed) never fire
+  // onend/onerror at all — don't let that permanently disable the Answer button.
+  setTimeout(finish, 15000);
+}
+
 export default function Part1Conversation({ questions, onComplete }) {
   const [answers, setAnswers] = useState([]);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const { status, durationSec, audioBlob, audioUrl, error, audioLevel, start, stop, reset } = useAudioRecorder();
 
   const currentIndex = answers.length;
   const isLastQuestion = currentIndex === questions.length - 1;
+  const currentQuestion = questions[currentIndex];
+
+  // Guards StrictMode's dev double-invoke from reading the same question twice.
+  const lastSpokenIndexRef = useRef(-1);
+
+  useEffect(() => {
+    if (!speechSupported || currentIndex >= questions.length) return undefined;
+    if (lastSpokenIndexRef.current === currentIndex) return undefined;
+    lastSpokenIndexRef.current = currentIndex;
+
+    speak(currentQuestion, { onStart: () => setIsSpeaking(true), onEnd: () => setIsSpeaking(false) });
+
+    return () => window.speechSynthesis.cancel();
+  }, [currentIndex, currentQuestion, questions.length]);
+
+  useEffect(() => () => window.speechSynthesis.cancel(), []);
+
+  function handleReplay() {
+    speak(currentQuestion, { onStart: () => setIsSpeaking(true), onEnd: () => setIsSpeaking(false) });
+  }
+
+  // Hold Space to record — a keyboard alternative to the Answer/Stop buttons
+  // (which stay the primary interaction, since there's no spacebar on mobile).
+  useEffect(() => {
+    function isTypingTarget(target) {
+      const tag = target?.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable;
+    }
+
+    function handleKeyDown(e) {
+      if (e.code !== 'Space' || e.repeat || isTypingTarget(e.target)) return;
+      if (isSpeaking || status !== 'idle') return;
+      e.preventDefault();
+      start();
+    }
+
+    function handleKeyUp(e) {
+      if (e.code !== 'Space' || isTypingTarget(e.target)) return;
+      if (status !== 'recording') return;
+      e.preventDefault();
+      stop();
+    }
+
+    function handleBlur() {
+      if (status === 'recording') stop();
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [status, isSpeaking, start, stop]);
 
   async function handleConfirmAnswer() {
     // A URL of our own, independent of the recorder hook's — reset()/start()
@@ -47,8 +129,9 @@ export default function Part1Conversation({ questions, onComplete }) {
     <div className="part-recorder">
       <h2>Part 1: Interview</h2>
       <p className="app-subtitle">
-        Answer each question like a real conversation — the next question appears once you've
-        confirmed your answer.
+        {speechSupported
+          ? "The examiner reads each question aloud — answer, and the next question follows, just like a real conversation."
+          : "Answer each question like a real conversation — the next question appears once you've confirmed your answer."}
       </p>
 
       <div className="conversation-thread">
@@ -63,14 +146,31 @@ export default function Part1Conversation({ questions, onComplete }) {
 
         {currentIndex < questions.length && (
           <div className="conversation-turn">
-            <div className="chat-bubble chat-bubble-examiner">{questions[currentIndex]}</div>
+            <div className="chat-bubble chat-bubble-examiner">
+              <span>{currentQuestion}</span>
+              {speechSupported && (
+                <button
+                  type="button"
+                  className="chat-bubble-replay"
+                  onClick={handleReplay}
+                  disabled={isSpeaking}
+                  aria-label="Replay question"
+                  title="Replay question"
+                >
+                  🔊
+                </button>
+              )}
+            </div>
 
             {error && <div className="error-banner">{error}</div>}
 
             {status === 'idle' && (
-              <button type="button" className="submit-btn" onClick={start}>
-                Answer
-              </button>
+              <div className="recorder-controls">
+                <button type="button" className="submit-btn" onClick={start} disabled={isSpeaking}>
+                  {isSpeaking ? 'Examiner is speaking…' : 'Answer'}
+                </button>
+                {!isSpeaking && <span className="spacebar-hint">or hold Space</span>}
+              </div>
             )}
 
             {status === 'recording' && (
@@ -80,6 +180,7 @@ export default function Part1Conversation({ questions, onComplete }) {
                 <button type="button" className="submit-btn" onClick={stop}>
                   Stop
                 </button>
+                <span className="spacebar-hint">release Space to stop</span>
               </div>
             )}
 

@@ -802,6 +802,34 @@ h3 {
   color: var(--brown-deep);
   border-bottom-left-radius: 4px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-bubble-replay {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.chat-bubble-replay:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.chat-bubble-replay:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.spacebar-hint {
+  font-size: 0.82rem;
+  color: var(--brown-text);
 }
 
 .chat-bubble-you {
