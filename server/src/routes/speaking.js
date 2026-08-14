@@ -27,7 +27,11 @@ router.post("/live/ticket", requireAuth, requireVerifiedEmail, (req, res) => {
   if (!liveVoiceEnabled()) {
     return res.status(404).json({ error: "Live conversation is not enabled" });
   }
-  res.json({ ticket: createLiveTicket(req.user.id) });
+  const { topicId } = req.body ?? {};
+  if (!topicId || !getSpeakingTopic(topicId)) {
+    return res.status(400).json({ error: "A valid topicId is required" });
+  }
+  res.json({ ticket: createLiveTicket(req.user.id, topicId) });
 });
 
 router.get("/topics", (_req, res) => {

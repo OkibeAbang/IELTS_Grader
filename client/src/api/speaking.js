@@ -62,7 +62,10 @@ export async function fetchLiveVoiceStatus() {
   return data.enabled;
 }
 
-export async function fetchLiveTicket() {
-  const data = await requestJson('/api/speaking/live/ticket', { method: 'POST' });
+export async function fetchLiveTicket(topicId) {
+  const data = await requestJson('/api/speaking/live/ticket', {
+    method: 'POST',
+    body: JSON.stringify({ topicId }),
+  });
   return data.ticket;
 }

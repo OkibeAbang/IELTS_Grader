@@ -3,7 +3,7 @@ import { fetchSpeakingTopic, submitSpeakingAttempt, fetchLiveVoiceStatus } from 
 import { useAuth } from '../hooks/useAuth';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
-import Part1LiveConversation from '../components/speaking/Part1LiveConversation';
+import LiveSpeakingSession from '../components/speaking/LiveSpeakingSession';
 import PartRecorder from '../components/speaking/PartRecorder';
 import CueCardPart2 from '../components/speaking/CueCardPart2';
 import ReviewSubmit from '../components/speaking/ReviewSubmit';
@@ -16,7 +16,7 @@ export default function SpeakingPracticePage() {
   const [topicId, setTopicId] = useState(null);
   const [topic, setTopic] = useState(null);
   const [targetBand, setTargetBand] = useState('');
-  const [step, setStep] = useState('pick'); // pick | part1 | part2 | part3 | review
+  const [step, setStep] = useState('pick'); // pick | live | part1 | part2 | part3 | review
   const [recordings, setRecordings] = useState({});
   const [loadError, setLoadError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,10 +38,21 @@ export default function SpeakingPracticePage() {
     fetchSpeakingTopic(topicId)
       .then((t) => {
         setTopic(t);
-        setStep('part1');
+        setStep(useLiveVoice ? 'live' : 'part1');
       })
       .catch((err) => setLoadError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topicId]);
+
+  function handleLiveComplete(liveRecordings) {
+    setRecordings(liveRecordings);
+    setStep('review');
+  }
+
+  function handleLiveFallback() {
+    setUseLiveVoice(false);
+    setStep('part1');
+  }
 
   function handlePartComplete(key, data) {
     setRecordings((prev) => ({ ...prev, [key]: data }));
@@ -131,21 +142,18 @@ export default function SpeakingPracticePage() {
                 checked={useLiveVoice}
                 onChange={(e) => setUseLiveVoice(e.target.checked)}
               />
-              Try live AI conversation for Part 1 (beta)
+              Try full live AI conversation (beta)
             </label>
           )}
           <TopicPicker onSelect={setTopicId} />
         </>
       )}
 
-      {topic && step === 'part1' && useLiveVoice && (
-        <Part1LiveConversation
-          onComplete={(data) => handlePartComplete('part1', data)}
-          onCancel={() => setUseLiveVoice(false)}
-        />
+      {topic && step === 'live' && (
+        <LiveSpeakingSession topic={topic} onComplete={handleLiveComplete} onFallback={handleLiveFallback} />
       )}
 
-      {topic && step === 'part1' && !useLiveVoice && (
+      {topic && step === 'part1' && (
         <Part1Conversation
           questions={topic.part1.questions}
           onComplete={(data) => handlePartComplete('part1', data)}
