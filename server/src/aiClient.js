@@ -25,6 +25,29 @@ function isRetryableGeminiError(err) {
   return typeof err?.status === "number" && (err.status === 429 || err.status >= 500);
 }
 
+const GEMINI_MAX_ATTEMPTS = 3;
+const GEMINI_RETRY_BASE_DELAY_MS = 1000;
+
+/**
+ * Retries transient Gemini errors (429/5xx) with exponential backoff before
+ * giving up. This is the only protection audio calls get — generateJson
+ * skips the Groq/Claude fallback entirely for `contents`-based (audio) calls
+ * since neither provider accepts audio input, so a single 503 would
+ * otherwise fail the whole speaking grading request outright.
+ */
+async function generateContentWithRetry(params) {
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await genAI.models.generateContent(params);
+    } catch (err) {
+      if (!isRetryableGeminiError(err) || attempt === GEMINI_MAX_ATTEMPTS) throw err;
+      const delay = GEMINI_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+      console.warn(`Gemini call failed (status ${err.status}), retrying in ${delay}ms (attempt ${attempt}/${GEMINI_MAX_ATTEMPTS})`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
 /**
  * Text-only fallbacks used when Gemini's quota/capacity is exhausted. Neither
  * provider's chat API has an audio content type, so these only ever run for
@@ -59,7 +82,7 @@ async function generateJsonWithClaude({ systemPrompt, userMessage, maxOutputToke
 
 async function generateJson({ systemPrompt, userMessage, contents, maxOutputTokens = 4096 }) {
   try {
-    const response = await genAI.models.generateContent({
+    const response = await generateContentWithRetry({
       model: MODEL,
       contents: contents ?? userMessage,
       config: {
