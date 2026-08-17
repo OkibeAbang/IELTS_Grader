@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import StatTile from '../components/StatTile';
+import ThemeToggle from '../components/ThemeToggle';
 import { adminLogout, fetchAdminStats, fetchAdminUsers, fetchAdminAttempts, deleteAdminUser } from '../api/admin';
 
 const TABS = ['Overview', 'Users', 'Attempts'];
@@ -59,7 +60,10 @@ export default function AdminDashboardPage() {
     <div className="admin-standalone">
       <header className="admin-header">
         <h1>Admin</h1>
-        <button type="button" className="top-nav-logout" onClick={handleLogout}>Log out</button>
+        <div className="admin-header-actions">
+          <ThemeToggle />
+          <button type="button" className="top-nav-logout" onClick={handleLogout}>Log out</button>
+        </div>
       </header>
 
       <div className="mode-tabs">

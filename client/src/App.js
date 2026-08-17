@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import ThemeToggle from './components/ThemeToggle';
 import OverviewPage from './pages/OverviewPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -45,6 +47,7 @@ function Sidebar() {
       </nav>
       <span className="sidebar-spacer" />
       <div className="sidebar-account">
+        <ThemeToggle className="sidebar-theme-toggle" />
         {user ? (
           <>
             <span className="sidebar-account-email">{user.email}</span>
@@ -155,9 +158,11 @@ export default function App() {
     </BrowserRouter>
   );
 
+  const withTheme = <ThemeProvider>{content}</ThemeProvider>;
+
   return googleClientId ? (
-    <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>{withTheme}</GoogleOAuthProvider>
   ) : (
-    content
+    withTheme
   );
 }

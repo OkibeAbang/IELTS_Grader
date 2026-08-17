@@ -64,11 +64,11 @@ export default function BandTrendChart({ attempts }) {
             </text>
           ))}
 
-        <path d={linePath} fill="none" stroke="var(--green-deep)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={linePath} fill="none" stroke="var(--green)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
         {points.map((p, i) => (
           <g key={i}>
-            <circle cx={xFor(i)} cy={yFor(p.band)} r="5" fill="var(--green-deep)" stroke="var(--cream-deep)" strokeWidth="2" />
+            <circle cx={xFor(i)} cy={yFor(p.band)} r="5" fill="var(--green)" stroke="var(--cream-deep)" strokeWidth="2" />
             <circle
               cx={xFor(i)}
               cy={yFor(p.band)}
@@ -86,7 +86,7 @@ export default function BandTrendChart({ attempts }) {
         ))}
 
         <g transform={`translate(${xFor(points.length - 1)}, ${yFor(last.band)})`}>
-          <rect x={8} y={-11} width={30} height={22} rx={11} fill="var(--green-deep)" />
+          <rect x={8} y={-11} width={30} height={22} rx={11} fill="var(--green)" />
           <text x={23} y={0} textAnchor="middle" dominantBaseline="middle" className="chart-end-label">
             {last.band}
           </text>

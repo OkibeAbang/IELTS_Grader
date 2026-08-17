@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import ThemeToggle from '../components/ThemeToggle';
 
 const CHECKLIST = [
   'Full essay grading for Writing Task 1 & 2, or practice one section at a time',
@@ -33,6 +34,7 @@ export default function OverviewPage() {
             <Link to="/speaking">Speaking Practice</Link>
           </nav>
           <div className="marketing-nav-actions">
+            <ThemeToggle />
             <Link to="/login" className="marketing-nav-login">Log in</Link>
             <Link to="/essay-grader" className="submit-btn">Get started</Link>
           </div>

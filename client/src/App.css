@@ -13,6 +13,41 @@
   --gold-pale: #faf0d6;
   --rust: #a54a2a;
   --rust-pale: #f6e3d8;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --cream: #1c1a16;
+    --cream-deep: #262319;
+    --sand: #3a3527;
+    --brown-line: #423d2d;
+    --brown-text: #b8ae97;
+    --brown-deep: #f3efe4;
+    --green-deep: #8fc17c;
+    --green-pale: #26331f;
+    --gold-deep: #e8bb63;
+    --gold-pale: #3a2f16;
+    --rust: #d97b54;
+    --rust-pale: #3a2419;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --cream: #1c1a16;
+  --cream-deep: #262319;
+  --sand: #3a3527;
+  --brown-line: #423d2d;
+  --brown-text: #b8ae97;
+  --brown-deep: #f3efe4;
+  --green-deep: #8fc17c;
+  --green-pale: #26331f;
+  --gold-deep: #e8bb63;
+  --gold-pale: #3a2f16;
+  --rust: #d97b54;
+  --rust-pale: #3a2419;
+  color-scheme: dark;
 }
 
 * {
@@ -200,6 +235,30 @@ h3 {
   color: var(--rust);
 }
 
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  border: 1px solid var(--brown-line);
+  border-radius: 7px;
+  background: var(--cream-deep);
+  color: var(--brown-deep);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--green);
+}
+
+.sidebar-theme-toggle {
+  align-self: flex-start;
+}
+
 .submit-btn {
   display: inline-block;
   align-self: flex-start;
@@ -216,7 +275,7 @@ h3 {
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: var(--green-deep);
+  filter: brightness(0.88);
 }
 
 .submit-btn:disabled {
@@ -575,7 +634,7 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  background: var(--green-deep);
+  background: var(--green);
   color: #fff;
   padding: 28px 20px;
   border-radius: 12px;
@@ -1223,6 +1282,12 @@ h3 {
   font-size: 1.6rem;
 }
 
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* ---- marketing / overview page ---- */
 
 .marketing-page {
@@ -1382,7 +1447,7 @@ h3 {
 }
 
 .hero-mock-band {
-  background: var(--green-deep);
+  background: var(--green);
   color: #fff;
   border-radius: 12px;
   padding: 20px;
