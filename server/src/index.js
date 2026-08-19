@@ -8,6 +8,8 @@ import { initDb } from "./db.js";
 import { writingRouter } from "./routes/writing.js";
 import { authRouter } from "./routes/auth.js";
 import { speakingRouter } from "./routes/speaking.js";
+import { readingRouter } from "./routes/reading.js";
+import { listeningRouter } from "./routes/listening.js";
 import { adminRouter } from "./routes/admin.js";
 import { attachLiveSpeaking } from "./liveSpeaking.js";
 
@@ -31,6 +33,8 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api", writingRouter);
 app.use("/api/speaking", speakingRouter);
+app.use("/api/reading", readingRouter);
+app.use("/api/listening", listeningRouter);
 app.use("/api/admin", adminRouter);
 
 const PORT = process.env.PORT || 4000;

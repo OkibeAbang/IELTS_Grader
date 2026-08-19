@@ -120,4 +120,4 @@ async function gradeSpeaking({
   return { ...result, preCheck: check, wavBuffers: { part1: part1Wav, part2: part2Wav, part3: part3Wav } };
 }
 
-export { gradeSpeaking, preCheckSpeaking };
+export { gradeSpeaking, preCheckSpeaking, MIN_PART1_SECONDS, MIN_PART2_SECONDS, MIN_PART3_SECONDS };

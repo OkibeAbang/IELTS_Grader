@@ -4,8 +4,21 @@ import { getSpeakingTopicBank, getSpeakingTopic } from "../speakingQuestionBank.
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
 import { gradeSpeaking } from "../gradeSpeaking.js";
-import { saveAttemptAudio, streamAttemptAudio, deleteAttemptAudio } from "../audioStorage.js";
+import { gradeSpeakingSection } from "../gradeSpeakingSection.js";
+import {
+  saveAttemptAudio,
+  streamAttemptAudio,
+  deleteAttemptAudio,
+  saveSpeakingDrillAudio,
+  deleteSpeakingDrillAudio,
+} from "../audioStorage.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/speakingAttempts.js";
+import {
+  createAttempt as createDrillAttempt,
+  listAttemptsForUser as listDrillAttemptsForUser,
+  findAttemptById as findDrillAttemptById,
+  deleteAttempt as deleteDrillAttempt,
+} from "../models/speakingDrillAttempts.js";
 import { createLiveTicket } from "../liveSpeaking.js";
 
 const router = express.Router();
@@ -169,6 +182,109 @@ router.get("/attempts/:id/audio/:part", requireAuth, async (req, res) => {
     await streamAttemptAudio(key, res);
   } catch (err) {
     console.error("Streaming audio failed:", err);
+    if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });
+  }
+});
+
+const drillAudioUpload = upload.single("audio");
+
+router.post("/drill-attempts", requireAuth, requireVerifiedEmail, drillAudioUpload, async (req, res) => {
+  const { topicId, part, durationSec } = req.body ?? {};
+
+  const topic = typeof topicId === "string" ? getSpeakingTopic(topicId) : null;
+  if (!topic) {
+    return res.status(400).json({ error: "A valid topicId is required" });
+  }
+  if (!["part1", "part2", "part3"].includes(part)) {
+    return res.status(400).json({ error: "part must be 'part1', 'part2', or 'part3'" });
+  }
+  if (!req.file) {
+    return res.status(400).json({ error: "An audio file is required" });
+  }
+
+  try {
+    const result = await gradeSpeakingSection({
+      topic,
+      part,
+      audioBuffer: req.file.buffer,
+      durationSec: Number(durationSec) || 0,
+    });
+    const { wavBuffer, ...gradedResult } = result;
+
+    const { audioPath } = await saveSpeakingDrillAudio(req.user.id, part, wavBuffer);
+    const attempt = await createDrillAttempt({
+      userId: req.user.id,
+      topicId: topic.id,
+      topicLabel: topic.topic,
+      part,
+      audioPath,
+      criteria: gradedResult.criteria,
+      overallBand: gradedResult.provisional_overall_band,
+      rawGraderResult: gradedResult,
+    });
+
+    res.status(201).json({ ...gradedResult, attemptId: attempt.id });
+  } catch (err) {
+    console.error("Speaking drill grading failed:", err);
+    res.status(502).json({ error: "Grading failed. Please try again." });
+  }
+});
+
+router.get("/drill-attempts", requireAuth, async (req, res) => {
+  try {
+    res.json({ attempts: await listDrillAttemptsForUser(req.user.id) });
+  } catch (err) {
+    console.error("Listing speaking drill attempts failed:", err);
+    res.status(502).json({ error: "Could not load your drill history. Please try again." });
+  }
+});
+
+router.get("/drill-attempts/:id", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findDrillAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    res.json({
+      attempt: {
+        ...attempt.rawGraderResult,
+        attemptId: attempt.id,
+        topicLabel: attempt.topicLabel,
+        part: attempt.part,
+        createdAt: attempt.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error("Loading speaking drill attempt failed:", err);
+    res.status(502).json({ error: "Could not load this attempt. Please try again." });
+  }
+});
+
+router.delete("/drill-attempts/:id", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findDrillAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    await deleteSpeakingDrillAudio(attempt);
+    await deleteDrillAttempt(attempt.id);
+    res.status(204).end();
+  } catch (err) {
+    console.error("Deleting speaking drill attempt failed:", err);
+    res.status(502).json({ error: "Could not delete this attempt. Please try again." });
+  }
+});
+
+router.get("/drill-attempts/:id/audio", requireAuth, async (req, res) => {
+  try {
+    const attempt = await findDrillAttemptById(req.params.id);
+    if (!attempt || attempt.userId !== req.user.id) {
+      return res.status(404).json({ error: "Attempt not found" });
+    }
+    res.set("Content-Type", "audio/wav");
+    await streamAttemptAudio(attempt.audioPath, res);
+  } catch (err) {
+    console.error("Streaming drill audio failed:", err);
     if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });
   }
 });

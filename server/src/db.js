@@ -72,7 +72,68 @@ async function initDb() {
     `CREATE INDEX IF NOT EXISTS idx_essay_attempts_user ON essay_attempts(user_id, created_at DESC)`
   );
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS reading_attempts (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id          INTEGER NOT NULL REFERENCES users(id),
+      passage_id       TEXT NOT NULL,
+      passage_title    TEXT NOT NULL,
+      answers_json     TEXT NOT NULL,
+      correct_count    INTEGER NOT NULL,
+      total_questions  INTEGER NOT NULL,
+      overall_band     REAL NOT NULL,
+      raw_result_json  TEXT NOT NULL,
+      created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_reading_attempts_user ON reading_attempts(user_id, created_at DESC)`
+  );
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS listening_attempts (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id          INTEGER NOT NULL REFERENCES users(id),
+      section_id       TEXT NOT NULL,
+      section_title    TEXT NOT NULL,
+      answers_json     TEXT NOT NULL,
+      correct_count    INTEGER NOT NULL,
+      total_questions  INTEGER NOT NULL,
+      overall_band     REAL NOT NULL,
+      raw_result_json  TEXT NOT NULL,
+      created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_listening_attempts_user ON listening_attempts(user_id, created_at DESC)`
+  );
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS speaking_drill_attempts (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id         INTEGER NOT NULL REFERENCES users(id),
+      topic_id        TEXT NOT NULL,
+      topic_label     TEXT NOT NULL,
+      part            TEXT NOT NULL,
+      audio_path      TEXT NOT NULL,
+      criteria_json   TEXT NOT NULL,
+      overall_band    REAL NOT NULL,
+      raw_grader_json TEXT NOT NULL,
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_speaking_drill_attempts_user ON speaking_drill_attempts(user_id, created_at DESC)`
+  );
+
   await ensureColumn("speaking_attempts", "target_band", "REAL");
+  await ensureColumn("reading_attempts", "mode", "TEXT NOT NULL DEFAULT 'full'");
+  await ensureColumn("reading_attempts", "question_type", "TEXT");
+  await ensureColumn("listening_attempts", "mode", "TEXT NOT NULL DEFAULT 'full'");
+  await ensureColumn("listening_attempts", "question_type", "TEXT");
   await ensureColumn("users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
   await ensureColumn("users", "verification_token", "TEXT");
   await ensureColumn("users", "verification_token_expires_at", "TEXT");

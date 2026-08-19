@@ -81,4 +81,34 @@ async function deleteAttemptAudio(attempt) {
   }
 }
 
-export { saveAttemptAudio, streamAttemptAudio, deleteAttemptAudio };
+/** Single-file analog of saveAttemptAudio, for a one-part Learn drill attempt. */
+async function saveSpeakingDrillAudio(userId, part, wavBuffer) {
+  const key = `speaking-drill/${userId}/${crypto.randomUUID()}/${part}.wav`;
+  if (r2) {
+    await r2.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, Body: wavBuffer, ContentType: "audio/wav" }));
+  } else {
+    const absPath = localPathFor(key);
+    fs.mkdirSync(path.dirname(absPath), { recursive: true });
+    fs.writeFileSync(absPath, wavBuffer);
+  }
+  return { audioPath: key };
+}
+
+async function deleteSpeakingDrillAudio(attempt) {
+  if (!attempt.audioPath) return;
+
+  if (r2) {
+    await r2.send(new DeleteObjectsCommand({ Bucket: R2_BUCKET, Delete: { Objects: [{ Key: attempt.audioPath }] } }));
+  } else {
+    const dir = path.dirname(localPathFor(attempt.audioPath));
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+export {
+  saveAttemptAudio,
+  streamAttemptAudio,
+  deleteAttemptAudio,
+  saveSpeakingDrillAudio,
+  deleteSpeakingDrillAudio,
+};
