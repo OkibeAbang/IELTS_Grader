@@ -17,7 +17,7 @@ export default function SignupPage() {
     setError(null);
     try {
       await signup({ email, password });
-      navigate('/speaking', { replace: true });
+      navigate('/practice', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,7 +29,7 @@ export default function SignupPage() {
     setError(null);
     try {
       await loginWithGoogle(credentialResponse.credential);
-      navigate('/speaking', { replace: true });
+      navigate('/practice', { replace: true });
     } catch (err) {
       setError(err.message);
     }

@@ -17,7 +17,7 @@ export default function ResetPasswordPage() {
     setError(null);
     try {
       await resetPassword({ token, password });
-      navigate('/speaking', { replace: true });
+      navigate('/practice', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

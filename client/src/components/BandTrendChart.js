@@ -40,7 +40,7 @@ export default function BandTrendChart({ attempts }) {
   return (
     <div className="band-trend-chart">
       <h2>Band Trend</h2>
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Overall band score across past speaking attempts">
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Overall band score across past attempts">
         {gridBands.map((band) => (
           <g key={band}>
             <line

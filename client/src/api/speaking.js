@@ -57,6 +57,47 @@ export function attemptAudioUrl(attemptId, part) {
   return `${API_BASE_URL}/api/speaking/attempts/${encodeURIComponent(attemptId)}/audio/${part}`;
 }
 
+export async function submitSpeakingDrill({ topicId, part, audioBlob, durationSec }) {
+  const formData = new FormData();
+  formData.append('topicId', topicId);
+  formData.append('part', part);
+  formData.append('durationSec', String(durationSec));
+  formData.append('audio', audioBlob, `${part}.webm`);
+
+  const res = await fetch(`${API_BASE_URL}/api/speaking/drill-attempts`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.error || `Request failed with status ${res.status}`);
+    err.code = body.code;
+    throw err;
+  }
+
+  return res.json();
+}
+
+export async function fetchSpeakingDrillHistory() {
+  const data = await requestJson('/api/speaking/drill-attempts');
+  return data.attempts;
+}
+
+export async function fetchSpeakingDrillAttemptDetail(id) {
+  const data = await requestJson(`/api/speaking/drill-attempts/${encodeURIComponent(id)}`);
+  return data.attempt;
+}
+
+export async function deleteSpeakingDrillAttempt(id) {
+  await requestJson(`/api/speaking/drill-attempts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function speakingDrillAudioUrl(attemptId) {
+  return `${API_BASE_URL}/api/speaking/drill-attempts/${encodeURIComponent(attemptId)}/audio`;
+}
+
 export async function fetchLiveVoiceStatus() {
   const data = await requestJson('/api/speaking/live/status');
   return data.enabled;

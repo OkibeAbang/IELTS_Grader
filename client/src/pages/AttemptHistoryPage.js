@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { fetchAttemptHistory, deleteAttempt } from '../api/speaking';
+import {
+  fetchAttemptHistory,
+  deleteAttempt,
+  fetchSpeakingDrillHistory,
+  deleteSpeakingDrillAttempt,
+} from '../api/speaking';
 import { fetchEssayHistory, deleteEssayAttempt } from '../api/writing';
-import BandTrendChart from '../components/speaking/BandTrendChart';
-import StatTile from '../components/StatTile';
+import { fetchReadingHistory, deleteReadingAttempt } from '../api/reading';
+import { fetchListeningHistory, deleteListeningAttempt } from '../api/listening';
+import AttemptSection from '../components/AttemptSection';
 
 const SECTION_LABELS = {
   introduction: 'Introduction',
@@ -11,8 +16,21 @@ const SECTION_LABELS = {
   conclusion: 'Conclusion',
 };
 
-function roundToHalfBand(value) {
-  return Math.round(value * 2) / 2;
+const QUESTION_TYPE_LABELS = {
+  multiple_choice: 'Multiple Choice',
+  true_false_not_given: 'True/False/Not Given',
+  short_answer: 'Short Answer',
+};
+
+const SPEAKING_PART_LABELS = {
+  part1: 'Part 1',
+  part2: 'Part 2',
+  part3: 'Part 3',
+};
+
+function modeLabel(attempt) {
+  if (attempt.mode === 'full') return 'Full Test';
+  return `Drill — ${QUESTION_TYPE_LABELS[attempt.questionType] ?? attempt.questionType}`;
 }
 
 export default function AttemptHistoryPage() {
@@ -20,6 +38,12 @@ export default function AttemptHistoryPage() {
   const [error, setError] = useState(null);
   const [essayAttempts, setEssayAttempts] = useState(null);
   const [essayError, setEssayError] = useState(null);
+  const [readingAttempts, setReadingAttempts] = useState(null);
+  const [readingError, setReadingError] = useState(null);
+  const [listeningAttempts, setListeningAttempts] = useState(null);
+  const [listeningError, setListeningError] = useState(null);
+  const [speakingDrillAttempts, setSpeakingDrillAttempts] = useState(null);
+  const [speakingDrillError, setSpeakingDrillError] = useState(null);
 
   function load() {
     fetchAttemptHistory()
@@ -28,6 +52,15 @@ export default function AttemptHistoryPage() {
     fetchEssayHistory()
       .then(setEssayAttempts)
       .catch((err) => setEssayError(err.message));
+    fetchReadingHistory()
+      .then(setReadingAttempts)
+      .catch((err) => setReadingError(err.message));
+    fetchListeningHistory()
+      .then(setListeningAttempts)
+      .catch((err) => setListeningError(err.message));
+    fetchSpeakingDrillHistory()
+      .then(setSpeakingDrillAttempts)
+      .catch((err) => setSpeakingDrillError(err.message));
   }
 
   useEffect(load, []);
@@ -50,154 +83,115 @@ export default function AttemptHistoryPage() {
     }
   }
 
-  const hasAttempts = attempts && attempts.length > 0;
-  const hasEssayAttempts = essayAttempts && essayAttempts.length > 0;
-  const essayAverage = hasEssayAttempts
-    ? roundToHalfBand(essayAttempts.reduce((sum, a) => sum + a.overallBand, 0) / essayAttempts.length)
-    : null;
-  const essayLatest = hasEssayAttempts ? essayAttempts[0] : null;
-  const essayPrevious = essayAttempts && essayAttempts.length > 1 ? essayAttempts[1] : null;
-  const essayBest = hasEssayAttempts ? Math.max(...essayAttempts.map((a) => a.overallBand)) : null;
-  // Attempts arrive newest-first from the API.
-  const latest = hasAttempts ? attempts[0] : null;
-  const previous = attempts && attempts.length > 1 ? attempts[1] : null;
-  const average = hasAttempts
-    ? roundToHalfBand(attempts.reduce((sum, a) => sum + a.overallBand, 0) / attempts.length)
-    : null;
-  const best = hasAttempts ? Math.max(...attempts.map((a) => a.overallBand)) : null;
+  async function handleReadingDelete(id) {
+    try {
+      await deleteReadingAttempt(id);
+      setReadingAttempts((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      setReadingError(err.message);
+    }
+  }
+
+  async function handleListeningDelete(id) {
+    try {
+      await deleteListeningAttempt(id);
+      setListeningAttempts((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      setListeningError(err.message);
+    }
+  }
+
+  async function handleSpeakingDrillDelete(id) {
+    try {
+      await deleteSpeakingDrillAttempt(id);
+      setSpeakingDrillAttempts((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      setSpeakingDrillError(err.message);
+    }
+  }
 
   return (
     <div>
       <header className="app-header">
         <h1>Dashboard</h1>
         <p className="app-subtitle">
-          Your speaking and essay grading history, and your band trend over time.
+          Your speaking, essay, reading, and listening history, and your band trend over time.
         </p>
       </header>
 
-      <h2>Speaking Practice</h2>
+      <AttemptSection
+        title="Speaking Practice"
+        attempts={attempts}
+        error={error}
+        emptyMessage="No attempts yet. Complete a speaking practice session to see your progress here."
+        historyBasePath="/speaking/history"
+        onDelete={handleDelete}
+        chartLabelKey="topicLabel"
+        columns={[{ header: 'Topic', render: (a) => a.topicLabel }]}
+      />
 
-      {error && <div className="error-banner">{error}</div>}
+      <AttemptSection
+        title="Essay Grading"
+        attempts={essayAttempts}
+        error={essayError}
+        emptyMessage="No essay attempts yet. Grade an essay or practice a section to see your progress here."
+        historyBasePath="/essay-grader/history"
+        onDelete={handleEssayDelete}
+        showChart={false}
+        columns={[
+          { header: 'Task', render: (a) => (a.taskType === 'task1' ? 'Task 1' : 'Task 2') },
+          {
+            header: 'Mode',
+            render: (a) => (a.mode === 'full' ? 'Full Essay' : `Section — ${SECTION_LABELS[a.section] ?? a.section}`),
+          },
+        ]}
+      />
 
-      {attempts && attempts.length === 0 && (
-        <div className="dashboard-empty">
-          No attempts yet. Complete a speaking practice session to see your progress here.
-        </div>
-      )}
+      <AttemptSection
+        title="Reading Practice"
+        attempts={readingAttempts}
+        statsAttempts={readingAttempts?.filter((a) => a.mode !== 'drill')}
+        error={readingError}
+        emptyMessage="No reading attempts yet. Complete a passage to see your progress here."
+        historyBasePath="/reading/history"
+        onDelete={handleReadingDelete}
+        chartLabelKey="passageTitle"
+        columns={[
+          { header: 'Passage', render: (a) => a.passageTitle },
+          { header: 'Correct', render: (a) => `${a.correctCount} / ${a.totalQuestions}` },
+          { header: 'Mode', render: modeLabel },
+        ]}
+      />
 
-      {hasAttempts && (
-        <>
-          <div className="dashboard-stats">
-            <StatTile label="Total attempts" value={attempts.length} />
-            <StatTile label="Average band" value={average} />
-            <StatTile
-              label="Latest band"
-              value={latest.overallBand}
-              delta={previous ? latest.overallBand - previous.overallBand : undefined}
-            />
-            <StatTile label="Best band" value={best} />
-          </div>
+      <AttemptSection
+        title="Listening Practice"
+        attempts={listeningAttempts}
+        statsAttempts={listeningAttempts?.filter((a) => a.mode !== 'drill')}
+        error={listeningError}
+        emptyMessage="No listening attempts yet. Complete a section to see your progress here."
+        historyBasePath="/listening/history"
+        onDelete={handleListeningDelete}
+        chartLabelKey="sectionTitle"
+        columns={[
+          { header: 'Section', render: (a) => a.sectionTitle },
+          { header: 'Correct', render: (a) => `${a.correctCount} / ${a.totalQuestions}` },
+          { header: 'Mode', render: modeLabel },
+        ]}
+      />
 
-          {attempts.length >= 2 && (
-            <div className="dashboard-section">
-              <BandTrendChart attempts={attempts} />
-            </div>
-          )}
-
-          <div className="dashboard-section">
-            <h2>Recent attempts</h2>
-            <table className="attempt-history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Topic</th>
-                  <th>Overall Band</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {attempts.map((a) => (
-                  <tr key={a.id}>
-                    <td>{new Date(a.createdAt.replace(' ', 'T') + 'Z').toLocaleString()}</td>
-                    <td>{a.topicLabel}</td>
-                    <td>
-                      <span className="band-badge">{a.overallBand}</span>
-                    </td>
-                    <td className="attempt-history-actions">
-                      <Link to={`/speaking/history/${a.id}`} className="btn-secondary">
-                        View
-                      </Link>
-                      <button type="button" className="btn-secondary" onClick={() => handleDelete(a.id)}>
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      <h2>Essay Grading</h2>
-
-      {essayError && <div className="error-banner">{essayError}</div>}
-
-      {essayAttempts && essayAttempts.length === 0 && (
-        <div className="dashboard-empty">
-          No essay attempts yet. Grade an essay or practice a section to see your progress here.
-        </div>
-      )}
-
-      {hasEssayAttempts && (
-        <>
-          <div className="dashboard-stats">
-            <StatTile label="Total attempts" value={essayAttempts.length} />
-            <StatTile label="Average band" value={essayAverage} />
-            <StatTile
-              label="Latest band"
-              value={essayLatest.overallBand}
-              delta={essayPrevious ? essayLatest.overallBand - essayPrevious.overallBand : undefined}
-            />
-            <StatTile label="Best band" value={essayBest} />
-          </div>
-
-          <div className="dashboard-section">
-            <h3>Recent attempts</h3>
-            <table className="attempt-history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Task</th>
-                  <th>Mode</th>
-                  <th>Overall Band</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {essayAttempts.map((a) => (
-                  <tr key={a.id}>
-                    <td>{new Date(a.createdAt.replace(' ', 'T') + 'Z').toLocaleString()}</td>
-                    <td>{a.taskType === 'task1' ? 'Task 1' : 'Task 2'}</td>
-                    <td>{a.mode === 'full' ? 'Full Essay' : `Section — ${SECTION_LABELS[a.section] ?? a.section}`}</td>
-                    <td>
-                      <span className="band-badge">{a.overallBand}</span>
-                    </td>
-                    <td className="attempt-history-actions">
-                      <Link to={`/essay-grader/history/${a.id}`} className="btn-secondary">
-                        View
-                      </Link>
-                      <button type="button" className="btn-secondary" onClick={() => handleEssayDelete(a.id)}>
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      <AttemptSection
+        title="Speaking Drills"
+        attempts={speakingDrillAttempts}
+        error={speakingDrillError}
+        emptyMessage="No speaking drills yet. Practice a single part in Learn to see your progress here."
+        historyBasePath="/speaking/drill-history"
+        onDelete={handleSpeakingDrillDelete}
+        chartLabelKey="topicLabel"
+        columns={[
+          { header: 'Topic', render: (a) => a.topicLabel },
+          { header: 'Part', render: (a) => SPEAKING_PART_LABELS[a.part] ?? a.part },
+        ]}
+      />
     </div>
   );
 }

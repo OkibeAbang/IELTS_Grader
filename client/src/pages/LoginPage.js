@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const redirectTo = location.state?.from ?? '/speaking';
+  const redirectTo = location.state?.from ?? '/practice';
 
   async function handleSubmit(e) {
     e.preventDefault();

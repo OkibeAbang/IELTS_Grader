@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchSpeakingTopic, submitSpeakingAttempt, fetchLiveVoiceStatus } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
 import TopicPicker from '../components/speaking/TopicPicker';
@@ -114,6 +115,10 @@ export default function SpeakingPracticePage() {
           official rubric.
         </p>
       </header>
+
+      <Link to="/practice" className="btn-secondary">
+        ← Back to Practice
+      </Link>
 
       {user && !user.emailVerified && (
         <div className="precheck-warning">
