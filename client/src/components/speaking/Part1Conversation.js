@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Volume2 } from 'lucide-react';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { mergeAudioBlobs } from '../../utils/mergeAudioBlobs';
 import AudioVisualizer from './AudioVisualizer';
@@ -157,7 +158,7 @@ export default function Part1Conversation({ questions, onComplete }) {
                   aria-label="Replay question"
                   title="Replay question"
                 >
-                  🔊
+                  <Volume2 size={16} aria-hidden="true" />
                 </button>
               )}
             </div>

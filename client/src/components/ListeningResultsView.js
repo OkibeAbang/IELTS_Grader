@@ -1,3 +1,5 @@
+import { Check, X } from 'lucide-react';
+
 export default function ListeningResultsView({ result }) {
   const { correctCount, totalQuestions, overallBand, questionResults, script } = result;
 
@@ -20,7 +22,10 @@ export default function ListeningResultsView({ result }) {
             </p>
             <p>Your answer: <strong>{q.userAnswer || '—'}</strong></p>
             {!q.isCorrect && <p>Correct answer: <strong>{q.correctAnswer}</strong></p>}
-            <span>{q.isCorrect ? '✓ Correct' : '✗ Incorrect'}</span>
+            <span>
+              {q.isCorrect ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}{' '}
+              {q.isCorrect ? 'Correct' : 'Incorrect'}
+            </span>
           </div>
         ))}
       </div>

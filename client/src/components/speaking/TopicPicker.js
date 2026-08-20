@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { fetchSpeakingTopics } from '../../api/speaking';
 
 export default function TopicPicker({ onSelect }) {
@@ -34,7 +35,9 @@ export default function TopicPicker({ onSelect }) {
             <span className="topic-card-title">{t.topic}</span>
             <span className="topic-card-badges">
               <span className="topic-badge">Parts 1–3</span>
-              <span className="topic-badge topic-badge-duration">⏱ ~{t.estimatedMinutes} min</span>
+              <span className="topic-badge topic-badge-duration">
+                <Clock size={12} aria-hidden="true" /> ~{t.estimatedMinutes} min
+              </span>
             </span>
           </button>
         ))}

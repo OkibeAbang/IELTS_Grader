@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { LayoutGrid, GraduationCap, BarChart3, LogOut, LogIn, PanelLeft } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './hooks/useAuth';
@@ -37,8 +38,8 @@ import './App.css';
 const SIDEBAR_COLLAPSED_KEY = 'ielts-grader-sidebar-collapsed';
 
 const NAV_ITEMS = [
-  { to: '/practice', icon: '📚', label: 'Practice', end: true },
-  { to: '/learn', icon: '🎓', label: 'Learn', end: false },
+  { to: '/practice', icon: LayoutGrid, label: 'Practice', end: true },
+  { to: '/learn', icon: GraduationCap, label: 'Learn', end: false },
 ];
 
 function sidebarLinkClass({ isActive }) {
@@ -73,7 +74,7 @@ function Sidebar() {
           aria-expanded={!collapsed}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? '»' : '«'}
+          <PanelLeft size={16} aria-hidden="true" />
         </button>
       </div>
       <nav className="sidebar-nav">
@@ -86,13 +87,13 @@ function Sidebar() {
             title={item.label}
             aria-label={item.label}
           >
-            <span className="sidebar-item-icon" aria-hidden="true">{item.icon}</span>
+            <span className="sidebar-item-icon"><item.icon size={18} aria-hidden="true" /></span>
             <span className="sidebar-item-label">{item.label}</span>
           </NavLink>
         ))}
         {user && (
           <NavLink to="/speaking/history" className={sidebarLinkClass} title="Dashboard" aria-label="Dashboard">
-            <span className="sidebar-item-icon" aria-hidden="true">📊</span>
+            <span className="sidebar-item-icon"><BarChart3 size={18} aria-hidden="true" /></span>
             <span className="sidebar-item-label">Dashboard</span>
           </NavLink>
         )}
@@ -104,13 +105,13 @@ function Sidebar() {
           <>
             <span className="sidebar-account-email">{user.email}</span>
             <button type="button" className="top-nav-logout" onClick={handleLogout} title="Log out" aria-label="Log out">
-              <span className="sidebar-item-icon" aria-hidden="true">🚪</span>
+              <span className="sidebar-item-icon"><LogOut size={18} aria-hidden="true" /></span>
               <span className="sidebar-item-label">Log out</span>
             </button>
           </>
         ) : (
           <NavLink to="/login" className={sidebarLinkClass} title="Log in" aria-label="Log in">
-            <span className="sidebar-item-icon" aria-hidden="true">→</span>
+            <span className="sidebar-item-icon"><LogIn size={18} aria-hidden="true" /></span>
             <span className="sidebar-item-label">Log in</span>
           </NavLink>
         )}

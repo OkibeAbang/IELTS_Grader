@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 
 const CHECKLIST = [
@@ -258,7 +259,9 @@ export default function OverviewPage() {
 
             <Link to="/signup" className="preview-mockup-wrapper" aria-label="Sign up to try it yourself">
               <PreviewMockup tab={activeTab} />
-              <span className="preview-mockup-overlay">Try it yourself →</span>
+              <span className="preview-mockup-overlay">
+                Try it yourself <ArrowRight size={18} aria-hidden="true" />
+              </span>
             </Link>
           </div>
         </section>

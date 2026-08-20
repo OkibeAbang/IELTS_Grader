@@ -1,3 +1,4 @@
+import { AlertTriangle, Check } from 'lucide-react';
 import CriterionCard from './CriterionCard';
 
 export default function SectionResultsView({ result }) {
@@ -15,7 +16,7 @@ export default function SectionResultsView({ result }) {
       {preCheck?.issues?.length > 0 && (
         <div className="precheck-warning">
           {preCheck.issues.map((issue, i) => (
-            <p key={i}>⚠ {issue}</p>
+            <p key={i}><AlertTriangle size={14} aria-hidden="true" /> {issue}</p>
           ))}
         </div>
       )}
@@ -32,7 +33,12 @@ export default function SectionResultsView({ result }) {
           }
         >
           <h3>
-            {section_checklist.meets_structural_purpose ? '✓' : '⚠'} Does this section do its job?
+            {section_checklist.meets_structural_purpose ? (
+              <Check size={16} aria-hidden="true" />
+            ) : (
+              <AlertTriangle size={16} aria-hidden="true" />
+            )}{' '}
+            Does this section do its job?
           </h3>
           <p>{section_checklist.notes}</p>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { fetchListeningSections } from '../../api/listening';
 
 export default function SectionPicker({ onSelect }) {
@@ -30,7 +31,9 @@ export default function SectionPicker({ onSelect }) {
             <span className="topic-card-title">{s.title}</span>
             <span className="topic-card-badges">
               <span className="topic-badge">{s.questionCount} questions</span>
-              <span className="topic-badge topic-badge-duration">⏱ ~{s.estimatedMinutes} min</span>
+              <span className="topic-badge topic-badge-duration">
+                <Clock size={12} aria-hidden="true" /> ~{s.estimatedMinutes} min
+              </span>
             </span>
           </button>
         ))}

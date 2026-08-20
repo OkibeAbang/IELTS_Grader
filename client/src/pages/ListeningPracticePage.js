@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { fetchListeningSection, submitListeningAttempt } from '../api/listening';
 import SectionPicker from '../components/listening/SectionPicker';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
@@ -65,7 +66,7 @@ export default function ListeningPracticePage() {
       </header>
 
       <Link to="/practice" className="btn-secondary">
-        ← Back to Practice
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
       </Link>
 
       {loadError && <div className="error-banner">{loadError}</div>}

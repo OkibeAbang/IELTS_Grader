@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { fetchReadingPassage, submitReadingAttempt } from '../api/reading';
 import PassagePicker from '../components/reading/PassagePicker';
 import PassageViewer from '../components/reading/PassageViewer';
@@ -64,7 +65,7 @@ export default function ReadingPracticePage() {
       </header>
 
       <Link to="/practice" className="btn-secondary">
-        ← Back to Practice
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
       </Link>
 
       {loadError && <div className="error-banner">{loadError}</div>}

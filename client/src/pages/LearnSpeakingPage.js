@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { fetchSpeakingTopic, submitSpeakingDrill } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
 import QuestionTypePicker from '../components/QuestionTypePicker';
@@ -65,7 +66,7 @@ export default function LearnSpeakingPage() {
       </header>
 
       <Link to="/learn" className="btn-secondary">
-        ← Back to Learn
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Learn
       </Link>
 
       {user && !user.emailVerified && (

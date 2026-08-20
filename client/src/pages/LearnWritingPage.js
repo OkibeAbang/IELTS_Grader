@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import PracticeForm from '../components/PracticeForm';
 import SectionResultsView from '../components/SectionResultsView';
 import { gradeSection } from '../api/writing';
@@ -34,7 +35,7 @@ export default function LearnWritingPage() {
       </header>
 
       <Link to="/learn" className="btn-secondary">
-        ← Back to Learn
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Learn
       </Link>
 
       <main className="app-main">

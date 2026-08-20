@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { fetchReadingPassages } from '../../api/reading';
 
 export default function PassagePicker({ onSelect }) {
@@ -29,7 +30,9 @@ export default function PassagePicker({ onSelect }) {
             <span className="topic-card-title">{p.title}</span>
             <span className="topic-card-badges">
               <span className="topic-badge">{p.questionCount} questions</span>
-              <span className="topic-badge topic-badge-duration">⏱ ~{p.estimatedMinutes} min</span>
+              <span className="topic-badge topic-badge-duration">
+                <Clock size={12} aria-hidden="true" /> ~{p.estimatedMinutes} min
+              </span>
             </span>
           </button>
         ))}

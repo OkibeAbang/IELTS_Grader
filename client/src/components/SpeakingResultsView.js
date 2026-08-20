@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react';
 import CriterionCard from './CriterionCard';
 
 const PART_LABELS = {
@@ -21,7 +22,7 @@ export default function SpeakingResultsView({ result }) {
       {preCheck?.issues?.length > 0 && (
         <div className="precheck-warning">
           {preCheck.issues.map((issue, i) => (
-            <p key={i}>⚠ {issue}</p>
+            <p key={i}><AlertTriangle size={14} aria-hidden="true" /> {issue}</p>
           ))}
         </div>
       )}

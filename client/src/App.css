@@ -136,9 +136,9 @@ h3 {
 .sidebar-item-icon {
   flex-shrink: 0;
   width: 1.1em;
-  font-size: 1rem;
-  line-height: 1;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-item-label {
@@ -982,6 +982,9 @@ h3 {
 }
 
 .topic-badge-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--gold-pale);
   color: var(--gold-deep);
 }
@@ -1491,8 +1494,8 @@ a.hub-card:hover {
 }
 
 .hub-card-icon {
-  font-size: 1.8rem;
-  line-height: 1;
+  display: inline-flex;
+  color: var(--green);
 }
 
 .hub-card-title {
