@@ -77,11 +77,11 @@ export default function AttemptSection({
             <tbody>
               {attempts.map((a) => (
                 <tr key={a.id}>
-                  <td>{new Date(a.createdAt.replace(' ', 'T') + 'Z').toLocaleString()}</td>
+                  <td data-label="Date">{new Date(a.createdAt.replace(' ', 'T') + 'Z').toLocaleString()}</td>
                   {columns.map((col) => (
-                    <td key={col.header}>{col.render(a)}</td>
+                    <td key={col.header} data-label={col.header}>{col.render(a)}</td>
                   ))}
-                  <td>
+                  <td data-label="Overall Band">
                     <span className="band-badge">{a.overallBand}</span>
                   </td>
                   <td className="attempt-history-actions">

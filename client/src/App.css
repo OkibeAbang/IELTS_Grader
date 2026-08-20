@@ -488,6 +488,7 @@ h3 {
 
 .mode-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--brown-line);
@@ -1303,6 +1304,65 @@ h3 {
   gap: 8px;
 }
 
+/* Below ~700px a multi-column table just doesn't fit — turn each row into a
+   stacked card instead of letting the table force the whole page to scroll
+   sideways. Headers move into each cell via data-label (set in
+   AttemptSection.js) rendered through ::before, but the real <thead> stays
+   in the DOM (visually hidden, not display:none) so screen readers keep the
+   real table semantics instead of losing the column headers entirely. */
+@media (max-width: 700px) {
+  .attempt-history-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .attempt-history-table,
+  .attempt-history-table tbody,
+  .attempt-history-table tr,
+  .attempt-history-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .attempt-history-table tr {
+    padding: 4px 14px;
+  }
+
+  .attempt-history-table tr + tr {
+    border-top: 1px solid var(--sand);
+  }
+
+  .attempt-history-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: none;
+    text-align: right;
+  }
+
+  .attempt-history-table td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--brown-text);
+    text-align: left;
+  }
+
+  .attempt-history-table td.attempt-history-actions {
+    justify-content: flex-end;
+    padding-top: 4px;
+  }
+}
+
 .dashboard-empty {
   background: var(--cream-deep);
   border: 1px dashed var(--brown-line);
@@ -1975,9 +2035,10 @@ a.hub-card:hover {
   }
 
   .marketing-nav-links {
-    order: 3;
-    width: 100%;
-    gap: 16px;
+    /* These duplicate the Tools grid a scroll away — on mobile they just
+       crowd the header next to the primary CTA, so drop them rather than
+       force-wrap four links into a cramped corner. */
+    display: none;
   }
 
   .marketing-hero {
