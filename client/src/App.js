@@ -17,6 +17,7 @@ import LearnHubPage from './pages/LearnHubPage';
 import PricingPage from './pages/PricingPage';
 import BillingPage from './pages/BillingPage';
 import FullTestPage from './pages/FullTestPage';
+import ProfilePage from './pages/ProfilePage';
 import FullTestAttemptDetailPage from './pages/FullTestAttemptDetailPage';
 import LearnWritingPage from './pages/LearnWritingPage';
 import LearnReadingPage from './pages/LearnReadingPage';
@@ -64,12 +65,14 @@ function Sidebar() {
     navigate('/');
   }
 
-  const brandTarget = user ? '/practice' : '/';
+  const isPro = user?.subscriptionTier === 'pro';
+  const displayName = user?.displayName || user?.email?.split('@')[0];
+  const avatarInitial = displayName ? displayName[0].toUpperCase() : '?';
 
   return (
     <aside className={collapsed ? 'sidebar sidebar-collapsed' : 'sidebar'}>
       <div className="sidebar-top-row">
-        <Link to={brandTarget} className="sidebar-brand">IELTS Grader</Link>
+        <Link to="/" className="sidebar-brand">IELTS Grader</Link>
         <button
           type="button"
           className="theme-toggle sidebar-collapse-toggle"
@@ -113,12 +116,16 @@ function Sidebar() {
         <ThemeToggle className="sidebar-theme-toggle" />
         {user ? (
           <>
-            <span className="sidebar-account-email">
-              <span className="sidebar-account-email-text">{user.email}</span>
-              <span className={user.subscriptionTier === 'pro' ? 'tier-badge tier-badge-pro' : 'tier-badge'}>
-                {user.subscriptionTier === 'pro' ? 'PRO' : 'FREE'}
+            <Link to="/profile" className="sidebar-profile-link" title="Profile settings">
+              <span className={isPro ? 'sidebar-plan-badge sidebar-plan-badge-pro' : 'sidebar-plan-badge'}>
+                <span className="sidebar-plan-dot" aria-hidden="true" />
+                {isPro ? 'Pro Plan' : 'Free Plan'}
               </span>
-            </span>
+              <span className="sidebar-profile-identity">
+                <span className="sidebar-profile-avatar" aria-hidden="true">{avatarInitial}</span>
+                <span className="sidebar-profile-name">{displayName}</span>
+              </span>
+            </Link>
             <button type="button" className="top-nav-logout" onClick={handleLogout} title="Log out" aria-label="Log out">
               <span className="sidebar-item-icon"><LogOut size={18} aria-hidden="true" /></span>
               <span className="sidebar-item-label">Log out</span>
@@ -176,6 +183,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <BillingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

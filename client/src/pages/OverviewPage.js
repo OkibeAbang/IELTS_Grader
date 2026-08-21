@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+import { useAuth } from '../hooks/useAuth';
 
 const CHECKLIST = [
   'Full essay grading for Writing Task 1 & 2, or practice one section at a time',
@@ -160,6 +161,7 @@ function PreviewMockup({ tab }) {
 }
 
 export default function OverviewPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('writing');
   const activePreview = PREVIEW_TABS.find((t) => t.key === activeTab);
 
@@ -177,8 +179,14 @@ export default function OverviewPage() {
           </nav>
           <div className="marketing-nav-actions">
             <ThemeToggle />
-            <Link to="/login" className="marketing-nav-login">Log in</Link>
-            <Link to="/signup" className="submit-btn">Get started</Link>
+            {user ? (
+              <Link to="/practice" className="submit-btn">Go to Practice</Link>
+            ) : (
+              <>
+                <Link to="/login" className="marketing-nav-login">Log in</Link>
+                <Link to="/signup" className="submit-btn">Get started</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -199,8 +207,14 @@ export default function OverviewPage() {
               ))}
             </ul>
             <div className="marketing-hero-actions">
-              <Link to="/signup" className="submit-btn">Create your free account</Link>
-              <Link to="/login" className="btn-secondary">Log in</Link>
+              {user ? (
+                <Link to="/practice" className="submit-btn">Go to Practice</Link>
+              ) : (
+                <>
+                  <Link to="/signup" className="submit-btn">Create your free account</Link>
+                  <Link to="/login" className="btn-secondary">Log in</Link>
+                </>
+              )}
             </div>
           </div>
 

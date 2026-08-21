@@ -58,6 +58,12 @@ export function AuthProvider({ children }) {
     return nextUser;
   }, []);
 
+  const updateProfile = useCallback(async (payload) => {
+    const nextUser = await authApi.updateProfile(payload);
+    setUser(nextUser);
+    return nextUser;
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -71,6 +77,7 @@ export function AuthProvider({ children }) {
         verifyEmail,
         resendVerification,
         resetPassword,
+        updateProfile,
       }}
     >
       {children}

@@ -9,6 +9,10 @@ Running list of things we started, deferred, or flagged but haven't closed out. 
 - [ ] **Set up Google Sign-In.** `GOOGLE_CLIENT_ID` (server) and `REACT_APP_GOOGLE_CLIENT_ID` (client) are unset — you need to create a Google Cloud OAuth client yourself. Until then the Google Sign-In button stays hidden; password signup/login already works fully without it.
 - [ ] **Rotate `GEMINI_API_KEY`.** It sat in plaintext in `server/.env` through the whole build session (visible in this chat). Only you can do this — generate a fresh one in Google AI Studio and swap it in.
 
+## Feature parity push
+
+Full checklist in [FEATURE_PARITY.md](FEATURE_PARITY.md) — closing the gap with ieltspractice.io (Reading/Listening modules, a "Learn" drill mode, unified stats, free/premium plan gating). Started 2026-08-17, nothing shipped yet.
+
 ## From the handoff roadmap
 
 Full detail and reasoning in the published artifact: [Handoff Roadmap — IELTS Practice Tool](https://claude.ai/code/artifact/3d485c9c-e252-44be-b92a-2d57f086d489). Only Phase 2 (security hardening) is done so far.

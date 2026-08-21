@@ -60,6 +60,11 @@ async function resetPassword(userId, passwordHash) {
   ]);
 }
 
+async function updateDisplayName(userId, displayName) {
+  await run(`UPDATE users SET display_name = ? WHERE id = ?`, [displayName, userId]);
+  return findById(userId);
+}
+
 async function findByStripeCustomerId(customerId) {
   return queryOne(`SELECT * FROM users WHERE stripe_customer_id = ?`, [customerId]);
 }
@@ -125,6 +130,7 @@ export {
   setResetToken,
   findByResetToken,
   resetPassword,
+  updateDisplayName,
   findByStripeCustomerId,
   updateSubscription,
   listAllUsers,

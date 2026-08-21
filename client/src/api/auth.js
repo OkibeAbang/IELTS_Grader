@@ -41,6 +41,14 @@ export async function verifyEmail(token) {
   return data.user;
 }
 
+export async function updateProfile({ displayName }) {
+  const data = await requestJson('/api/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ displayName }),
+  });
+  return data.user;
+}
+
 export async function resendVerification() {
   return requestJson('/api/auth/resend-verification', { method: 'POST' });
 }

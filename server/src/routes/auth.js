@@ -12,6 +12,7 @@ import {
   setResetToken,
   findByResetToken,
   resetPassword,
+  updateDisplayName,
 } from "../models/users.js";
 import { hashPassword, verifyPassword } from "../auth/passwords.js";
 import { signSession, verifySession, SESSION_COOKIE_NAME, cookieOptions } from "../auth/jwt.js";
@@ -153,6 +154,22 @@ router.post("/google", async (req, res) => {
 router.post("/logout", (_req, res) => {
   res.clearCookie(SESSION_COOKIE_NAME, cookieOptions);
   res.json({ ok: true });
+});
+
+router.patch("/me", requireAuth, async (req, res) => {
+  const { displayName } = req.body ?? {};
+
+  if (typeof displayName !== "string" || !displayName.trim() || displayName.length > 100) {
+    return res.status(400).json({ error: "displayName must be a non-empty string up to 100 characters" });
+  }
+
+  try {
+    const user = await updateDisplayName(req.user.id, displayName.trim());
+    res.json({ user: toPublicUser(user) });
+  } catch (err) {
+    console.error("Updating profile failed:", err);
+    res.status(502).json({ error: "Could not update your profile. Please try again." });
+  }
 });
 
 router.get("/session", async (req, res) => {
