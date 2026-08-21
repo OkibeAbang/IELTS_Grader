@@ -59,14 +59,14 @@ export default function LearnSpeakingPage() {
   return (
     <div>
       <header className="app-header">
-        <h1>Learn: Speaking</h1>
+        <h1>Speaking Drill</h1>
         <p className="app-subtitle">
           Drill a single part at a time, without the full 3-part test wrapper.
         </p>
       </header>
 
-      <Link to="/learn" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Learn
+      <Link to="/practice" className="btn-secondary">
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
       </Link>
 
       {user && !user.emailVerified && (

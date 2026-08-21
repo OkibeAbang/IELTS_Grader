@@ -8,6 +8,7 @@ import {
 import { fetchEssayHistory, deleteEssayAttempt } from '../api/writing';
 import { fetchReadingHistory, deleteReadingAttempt } from '../api/reading';
 import { fetchListeningHistory, deleteListeningAttempt } from '../api/listening';
+import { fetchFullTestHistory, deleteFullTestAttempt } from '../api/fullTest';
 import AttemptSection from '../components/AttemptSection';
 
 const SECTION_LABELS = {
@@ -44,6 +45,8 @@ export default function AttemptHistoryPage() {
   const [listeningError, setListeningError] = useState(null);
   const [speakingDrillAttempts, setSpeakingDrillAttempts] = useState(null);
   const [speakingDrillError, setSpeakingDrillError] = useState(null);
+  const [fullTestAttempts, setFullTestAttempts] = useState(null);
+  const [fullTestError, setFullTestError] = useState(null);
 
   function load() {
     fetchAttemptHistory()
@@ -61,6 +64,9 @@ export default function AttemptHistoryPage() {
     fetchSpeakingDrillHistory()
       .then(setSpeakingDrillAttempts)
       .catch((err) => setSpeakingDrillError(err.message));
+    fetchFullTestHistory()
+      .then(setFullTestAttempts)
+      .catch((err) => setFullTestError(err.message));
   }
 
   useEffect(load, []);
@@ -109,6 +115,17 @@ export default function AttemptHistoryPage() {
       setSpeakingDrillError(err.message);
     }
   }
+
+  async function handleFullTestDelete(id) {
+    try {
+      await deleteFullTestAttempt(id);
+      setFullTestAttempts((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      setFullTestError(err.message);
+    }
+  }
+
+  const completedFullTests = fullTestAttempts?.filter((a) => a.status === 'completed');
 
   return (
     <div>
@@ -190,6 +207,22 @@ export default function AttemptHistoryPage() {
         columns={[
           { header: 'Topic', render: (a) => a.topicLabel },
           { header: 'Part', render: (a) => SPEAKING_PART_LABELS[a.part] ?? a.part },
+        ]}
+      />
+
+      <AttemptSection
+        title="Full Test"
+        attempts={completedFullTests}
+        error={fullTestError}
+        emptyMessage="No full tests completed yet. Take a full timed test to see your progress here."
+        historyBasePath="/full-test/history"
+        onDelete={handleFullTestDelete}
+        showChart={false}
+        columns={[
+          { header: 'Listening', render: (a) => a.listeningBand },
+          { header: 'Reading', render: (a) => a.readingBand },
+          { header: 'Writing', render: (a) => a.writingBand },
+          { header: 'Speaking', render: (a) => a.speakingBand },
         ]}
       />
     </div>

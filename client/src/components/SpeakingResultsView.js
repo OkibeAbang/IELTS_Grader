@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import CriterionCard from './CriterionCard';
+import LockedFeedback from './LockedFeedback';
 
 const PART_LABELS = {
   part1: 'Part 1 — Interview',
@@ -14,7 +15,7 @@ function targetGapInfo(overallBand, targetBand) {
 }
 
 export default function SpeakingResultsView({ result }) {
-  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, corrections, part_transcripts, preCheck } = result;
+  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, corrections, part_transcripts, preCheck, proLocked } = result;
   const gapInfo = targetBand ? targetGapInfo(overall_band, targetBand) : null;
 
   return (
@@ -37,11 +38,15 @@ export default function SpeakingResultsView({ result }) {
         )}
       </div>
 
-      <div className="criteria-grid">
-        {Object.entries(criteria).map(([key, data]) => (
-          <CriterionCard key={key} criterionKey={key} data={data} />
-        ))}
-      </div>
+      {proLocked ? (
+        <LockedFeedback />
+      ) : (
+        <div className="criteria-grid">
+          {Object.entries(criteria).map(([key, data]) => (
+            <CriterionCard key={key} criterionKey={key} data={data} />
+          ))}
+        </div>
+      )}
 
       {top_3_improvements?.length > 0 && (
         <div className="improvements">

@@ -15,6 +15,12 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const nextUser = await authApi.getSession();
+    setUser(nextUser);
+    return nextUser;
+  }, []);
+
   const login = useCallback(async (credentials) => {
     const nextUser = await authApi.login(credentials);
     setUser(nextUser);
@@ -57,6 +63,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         loading,
+        refreshUser,
         login,
         signup,
         loginWithGoogle,

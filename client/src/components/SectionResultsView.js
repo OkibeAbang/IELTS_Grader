@@ -1,5 +1,6 @@
 import { AlertTriangle, Check } from 'lucide-react';
 import CriterionCard from './CriterionCard';
+import LockedFeedback from './LockedFeedback';
 
 export default function SectionResultsView({ result }) {
   const {
@@ -9,6 +10,7 @@ export default function SectionResultsView({ result }) {
     top_improvements,
     confidence_note,
     preCheck,
+    proLocked,
   } = result;
 
   return (
@@ -44,11 +46,15 @@ export default function SectionResultsView({ result }) {
         </div>
       )}
 
-      <div className="criteria-grid">
-        {Object.entries(criteria).map(([key, data]) => (
-          <CriterionCard key={key} criterionKey={key} data={data} />
-        ))}
-      </div>
+      {proLocked ? (
+        <LockedFeedback />
+      ) : (
+        <div className="criteria-grid">
+          {Object.entries(criteria).map(([key, data]) => (
+            <CriterionCard key={key} criterionKey={key} data={data} />
+          ))}
+        </div>
+      )}
 
       {top_improvements?.length > 0 && (
         <div className="improvements">

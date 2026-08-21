@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import CriterionCard from './CriterionCard';
+import LockedFeedback from './LockedFeedback';
 
 const PART_LABELS = {
   part1: 'Part 1 — Interview',
@@ -8,7 +9,7 @@ const PART_LABELS = {
 };
 
 export default function SpeakingSectionResultsView({ result }) {
-  const { part, criteria, provisional_overall_band, top_improvements, confidence_note, corrections, transcript, preCheck } = result;
+  const { part, criteria, provisional_overall_band, top_improvements, confidence_note, corrections, transcript, preCheck, proLocked } = result;
 
   return (
     <div className="results-view">
@@ -27,11 +28,15 @@ export default function SpeakingSectionResultsView({ result }) {
         <span className="overall-band-score">{provisional_overall_band}</span>
       </div>
 
-      <div className="criteria-grid">
-        {Object.entries(criteria).map(([key, data]) => (
-          <CriterionCard key={key} criterionKey={key} data={data} />
-        ))}
-      </div>
+      {proLocked ? (
+        <LockedFeedback />
+      ) : (
+        <div className="criteria-grid">
+          {Object.entries(criteria).map(([key, data]) => (
+            <CriterionCard key={key} criterionKey={key} data={data} />
+          ))}
+        </div>
+      )}
 
       {top_improvements?.length > 0 && (
         <div className="improvements">

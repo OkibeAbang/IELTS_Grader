@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { LayoutGrid, GraduationCap, BarChart3, LogOut, LogIn, PanelLeft } from 'lucide-react';
+import { LayoutGrid, GraduationCap, BarChart3, CreditCard, LogOut, LogIn, PanelLeft } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './hooks/useAuth';
@@ -14,6 +14,10 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminAttemptDetailPage from './pages/AdminAttemptDetailPage';
 import PracticeHubPage from './pages/PracticeHubPage';
 import LearnHubPage from './pages/LearnHubPage';
+import PricingPage from './pages/PricingPage';
+import BillingPage from './pages/BillingPage';
+import FullTestPage from './pages/FullTestPage';
+import FullTestAttemptDetailPage from './pages/FullTestAttemptDetailPage';
 import LearnWritingPage from './pages/LearnWritingPage';
 import LearnReadingPage from './pages/LearnReadingPage';
 import LearnListeningPage from './pages/LearnListeningPage';
@@ -97,13 +101,24 @@ function Sidebar() {
             <span className="sidebar-item-label">Dashboard</span>
           </NavLink>
         )}
+        {user && (
+          <NavLink to="/billing" className={sidebarLinkClass} title="Billing" aria-label="Billing">
+            <span className="sidebar-item-icon"><CreditCard size={18} aria-hidden="true" /></span>
+            <span className="sidebar-item-label">Billing</span>
+          </NavLink>
+        )}
       </nav>
       <span className="sidebar-spacer" />
       <div className="sidebar-account">
         <ThemeToggle className="sidebar-theme-toggle" />
         {user ? (
           <>
-            <span className="sidebar-account-email">{user.email}</span>
+            <span className="sidebar-account-email">
+              <span className="sidebar-account-email-text">{user.email}</span>
+              <span className={user.subscriptionTier === 'pro' ? 'tier-badge tier-badge-pro' : 'tier-badge'}>
+                {user.subscriptionTier === 'pro' ? 'PRO' : 'FREE'}
+              </span>
+            </span>
             <button type="button" className="top-nav-logout" onClick={handleLogout} title="Log out" aria-label="Log out">
               <span className="sidebar-item-icon"><LogOut size={18} aria-hidden="true" /></span>
               <span className="sidebar-item-label">Log out</span>
@@ -155,6 +170,31 @@ function AppRoutes() {
         }
       />
       <Route element={<AppLayout />}>
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route
+          path="/billing"
+          element={
+            <ProtectedRoute>
+              <BillingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/full-test"
+          element={
+            <ProtectedRoute>
+              <FullTestPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/full-test/history/:id"
+          element={
+            <ProtectedRoute>
+              <FullTestAttemptDetailPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/practice"
           element={
@@ -172,7 +212,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/learn/writing"
+          path="/practice/drills/writing"
           element={
             <ProtectedRoute>
               <LearnWritingPage />
@@ -180,7 +220,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/learn/reading"
+          path="/practice/drills/reading"
           element={
             <ProtectedRoute>
               <LearnReadingPage />
@@ -188,7 +228,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/learn/listening"
+          path="/practice/drills/listening"
           element={
             <ProtectedRoute>
               <LearnListeningPage />
@@ -196,7 +236,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/learn/speaking"
+          path="/practice/drills/speaking"
           element={
             <ProtectedRoute>
               <LearnSpeakingPage />

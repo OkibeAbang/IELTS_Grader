@@ -61,14 +61,14 @@ export default function LearnReadingPage() {
   return (
     <div>
       <header className="app-header">
-        <h1>Learn: Reading</h1>
+        <h1>Reading Drill</h1>
         <p className="app-subtitle">
           Drill just one question type at a time, with instant feedback.
         </p>
       </header>
 
-      <Link to="/learn" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Learn
+      <Link to="/practice" className="btn-secondary">
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
       </Link>
 
       {loadError && <div className="error-banner">{loadError}</div>}

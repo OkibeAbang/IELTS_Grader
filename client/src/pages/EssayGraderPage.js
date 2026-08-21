@@ -38,7 +38,7 @@ export default function EssayGraderPage() {
         <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
       </Link>
       <p className="app-subtitle">
-        Want to practice one paragraph at a time instead? Try <Link to="/learn/writing">Learn</Link>.
+        Want to practice one paragraph at a time instead? Try the <Link to="/practice/drills/writing">Writing Drill</Link>.
       </p>
 
       <main className="app-main">

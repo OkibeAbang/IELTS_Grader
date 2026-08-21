@@ -173,6 +173,7 @@ export default function OverviewPage() {
             <Link to="/reading">Reading</Link>
             <Link to="/listening">Listening</Link>
             <Link to="/speaking">Speaking</Link>
+            <Link to="/pricing">Pricing</Link>
           </nav>
           <div className="marketing-nav-actions">
             <ThemeToggle />

@@ -27,15 +27,15 @@ export default function LearnWritingPage() {
   return (
     <div>
       <header className="app-header">
-        <h1>Learn: Writing</h1>
+        <h1>Writing Drill</h1>
         <p className="app-subtitle">
           Practice one paragraph at a time — pick a section and get instant, focused feedback
           before you write a full essay.
         </p>
       </header>
 
-      <Link to="/learn" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Learn
+      <Link to="/practice" className="btn-secondary">
+        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
       </Link>
 
       <main className="app-main">

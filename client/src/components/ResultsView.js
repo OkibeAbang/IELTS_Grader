@@ -1,8 +1,9 @@
 import { AlertTriangle } from 'lucide-react';
 import CriterionCard from './CriterionCard';
+import LockedFeedback from './LockedFeedback';
 
 export default function ResultsView({ result }) {
-  const { criteria, overall_band, top_3_improvements, next_band_gap, preCheck } = result;
+  const { criteria, overall_band, top_3_improvements, next_band_gap, preCheck, proLocked } = result;
 
   return (
     <div className="results-view">
@@ -19,11 +20,15 @@ export default function ResultsView({ result }) {
         <span className="overall-band-score">{overall_band}</span>
       </div>
 
-      <div className="criteria-grid">
-        {Object.entries(criteria).map(([key, data]) => (
-          <CriterionCard key={key} criterionKey={key} data={data} />
-        ))}
-      </div>
+      {proLocked ? (
+        <LockedFeedback />
+      ) : (
+        <div className="criteria-grid">
+          {Object.entries(criteria).map(([key, data]) => (
+            <CriterionCard key={key} criterionKey={key} data={data} />
+          ))}
+        </div>
+      )}
 
       {top_3_improvements?.length > 0 && (
         <div className="improvements">
