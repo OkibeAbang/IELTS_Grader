@@ -11,6 +11,9 @@ import { speakingRouter } from "./routes/speaking.js";
 import { readingRouter } from "./routes/reading.js";
 import { listeningRouter } from "./routes/listening.js";
 import { adminRouter } from "./routes/admin.js";
+import { billingRouter, stripeWebhookHandler } from "./routes/billing.js";
+import { fullTestRouter } from "./routes/fullTest.js";
+import { studyPlanRouter } from "./routes/studyPlan.js";
 import { attachLiveSpeaking } from "./liveSpeaking.js";
 
 // Admin credentials live in a separate, gitignored `secret` file (not .env)
@@ -24,6 +27,12 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:3000", credentials: true }));
 app.use(cookieParser());
+
+// Stripe webhook signature verification needs the raw request body, so this
+// route must be registered — with its own raw-body parser — before the
+// global express.json() below consumes the stream for every other route.
+app.post("/api/billing/webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
+
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
@@ -36,6 +45,9 @@ app.use("/api/speaking", speakingRouter);
 app.use("/api/reading", readingRouter);
 app.use("/api/listening", listeningRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/billing", billingRouter);
+app.use("/api/full-test", fullTestRouter);
+app.use("/api/study-plan", studyPlanRouter);
 
 const PORT = process.env.PORT || 4000;
 const server = http.createServer(app);

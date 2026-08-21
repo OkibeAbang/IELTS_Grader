@@ -6,6 +6,7 @@ import { generatePrompt } from "../generatePrompt.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/essayAttempts.js";
+import { hasProAccess, gateFeedback } from "../billing/feedbackAccess.js";
 
 const router = express.Router();
 
@@ -33,7 +34,8 @@ router.post("/grade", requireAuth, requireVerifiedEmail, async (req, res) => {
       overallBand: result.overall_band,
       rawGraderResult: result,
     });
-    res.json({ ...result, attemptId: attempt.id });
+    const isPro = await hasProAccess(req.user.id);
+    res.json({ ...gateFeedback(result, ["overall_band", "preCheck"], isPro), attemptId: attempt.id });
   } catch (err) {
     console.error("Grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
@@ -68,7 +70,8 @@ router.post("/grade-section", requireAuth, requireVerifiedEmail, async (req, res
       overallBand: result.provisional_overall_band,
       rawGraderResult: result,
     });
-    res.json({ ...result, attemptId: attempt.id });
+    const isPro = await hasProAccess(req.user.id);
+    res.json({ ...gateFeedback(result, ["provisional_overall_band", "preCheck"], isPro), attemptId: attempt.id });
   } catch (err) {
     console.error("Section grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
@@ -116,9 +119,11 @@ router.get("/essays/:id", requireAuth, async (req, res) => {
     if (!attempt || attempt.userId !== req.user.id) {
       return res.status(404).json({ error: "Attempt not found" });
     }
+    const isPro = await hasProAccess(req.user.id);
+    const freeKeys = attempt.mode === "section" ? ["provisional_overall_band", "preCheck"] : ["overall_band", "preCheck"];
     res.json({
       attempt: {
-        ...attempt.rawGraderResult,
+        ...gateFeedback(attempt.rawGraderResult, freeKeys, isPro),
         attemptId: attempt.id,
         mode: attempt.mode,
         taskType: attempt.taskType,

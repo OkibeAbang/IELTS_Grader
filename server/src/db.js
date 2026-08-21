@@ -129,6 +129,48 @@ async function initDb() {
     `CREATE INDEX IF NOT EXISTS idx_speaking_drill_attempts_user ON speaking_drill_attempts(user_id, created_at DESC)`
   );
 
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS full_test_attempts (
+      id                        INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id                   INTEGER NOT NULL REFERENCES users(id),
+      listening_attempt_id      INTEGER REFERENCES listening_attempts(id),
+      reading_attempt_id        INTEGER REFERENCES reading_attempts(id),
+      writing_task1_attempt_id  INTEGER REFERENCES essay_attempts(id),
+      writing_task2_attempt_id  INTEGER REFERENCES essay_attempts(id),
+      speaking_attempt_id       INTEGER REFERENCES speaking_attempts(id),
+      listening_band            REAL,
+      reading_band              REAL,
+      writing_band              REAL,
+      speaking_band             REAL,
+      overall_band              REAL,
+      status                    TEXT NOT NULL DEFAULT 'in_progress',
+      created_at                TEXT NOT NULL DEFAULT (datetime('now')),
+      completed_at              TEXT
+    )
+  `);
+
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_full_test_attempts_user ON full_test_attempts(user_id, created_at DESC)`
+  );
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS study_plans (
+      id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id                 INTEGER NOT NULL UNIQUE REFERENCES users(id),
+      test_date               TEXT,
+      target_band             REAL,
+      current_band_listening  REAL,
+      current_band_reading    REAL,
+      current_band_writing    REAL,
+      current_band_speaking   REAL,
+      weekly_hours            REAL,
+      weakest_skill           TEXT,
+      plan_json               TEXT NOT NULL,
+      created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at              TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   await ensureColumn("speaking_attempts", "target_band", "REAL");
   await ensureColumn("reading_attempts", "mode", "TEXT NOT NULL DEFAULT 'full'");
   await ensureColumn("reading_attempts", "question_type", "TEXT");
@@ -139,6 +181,11 @@ async function initDb() {
   await ensureColumn("users", "verification_token_expires_at", "TEXT");
   await ensureColumn("users", "reset_token", "TEXT");
   await ensureColumn("users", "reset_token_expires_at", "TEXT");
+  await ensureColumn("users", "stripe_customer_id", "TEXT");
+  await ensureColumn("users", "stripe_subscription_id", "TEXT");
+  await ensureColumn("users", "subscription_tier", "TEXT NOT NULL DEFAULT 'free'");
+  await ensureColumn("users", "subscription_status", "TEXT");
+  await ensureColumn("users", "subscription_current_period_end", "TEXT");
 
   // Signup now auto-verifies (see routes/auth.js) since with no SMTP set up,
   // the old verification email never reached anyone. Backfill accounts stuck

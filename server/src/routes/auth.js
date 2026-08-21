@@ -42,6 +42,9 @@ function toPublicUser(row) {
     email: row.email,
     displayName: row.display_name ?? row.displayName ?? null,
     emailVerified: !!row.email_verified,
+    subscriptionTier: row.subscription_tier ?? row.subscriptionTier ?? "free",
+    subscriptionStatus: row.subscription_status ?? row.subscriptionStatus ?? null,
+    subscriptionCurrentPeriodEnd: row.subscription_current_period_end ?? row.subscriptionCurrentPeriodEnd ?? null,
   };
 }
 
@@ -254,4 +257,4 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-export { router as authRouter };
+export { router as authRouter, toPublicUser };

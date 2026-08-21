@@ -1,6 +1,8 @@
 import { run, queryOne, queryAll } from "../db.js";
 
-const PUBLIC_FIELDS = "id, email, display_name, email_verified, created_at";
+const PUBLIC_FIELDS =
+  "id, email, display_name, email_verified, created_at, " +
+  "stripe_customer_id, stripe_subscription_id, subscription_tier, subscription_status, subscription_current_period_end";
 
 async function createUser({ email, passwordHash = null, googleId = null, displayName = null, emailVerified = false }) {
   const id = await run(
@@ -58,6 +60,27 @@ async function resetPassword(userId, passwordHash) {
   ]);
 }
 
+async function findByStripeCustomerId(customerId) {
+  return queryOne(`SELECT * FROM users WHERE stripe_customer_id = ?`, [customerId]);
+}
+
+async function updateSubscription(
+  userId,
+  { stripeCustomerId, stripeSubscriptionId, tier, status, currentPeriodEnd }
+) {
+  await run(
+    `UPDATE users
+     SET stripe_customer_id = ?,
+         stripe_subscription_id = ?,
+         subscription_tier = ?,
+         subscription_status = ?,
+         subscription_current_period_end = ?
+     WHERE id = ?`,
+    [stripeCustomerId, stripeSubscriptionId, tier, status, currentPeriodEnd, userId]
+  );
+  return findById(userId);
+}
+
 async function listAllUsers() {
   const rows = await queryAll(
     `SELECT u.id, u.email, u.display_name, u.email_verified, u.google_id, u.created_at,
@@ -102,6 +125,8 @@ export {
   setResetToken,
   findByResetToken,
   resetPassword,
+  findByStripeCustomerId,
+  updateSubscription,
   listAllUsers,
   deleteUser,
   countUsers,

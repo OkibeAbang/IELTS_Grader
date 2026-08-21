@@ -20,6 +20,7 @@ import {
   deleteAttempt as deleteDrillAttempt,
 } from "../models/speakingDrillAttempts.js";
 import { createLiveTicket } from "../liveSpeaking.js";
+import { hasProAccess, gateFeedback } from "../billing/feedbackAccess.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -115,7 +116,12 @@ router.post("/attempts", requireAuth, requireVerifiedEmail, audioUpload, async (
       rawGraderResult: gradedResult,
     });
 
-    res.status(201).json({ ...gradedResult, attemptId: attempt.id, targetBand: attempt.targetBand });
+    const isPro = await hasProAccess(req.user.id);
+    res.status(201).json({
+      ...gateFeedback(gradedResult, ["overall_band", "preCheck"], isPro),
+      attemptId: attempt.id,
+      targetBand: attempt.targetBand,
+    });
   } catch (err) {
     console.error("Speaking grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
@@ -137,9 +143,10 @@ router.get("/attempts/:id", requireAuth, async (req, res) => {
     if (!attempt || attempt.userId !== req.user.id) {
       return res.status(404).json({ error: "Attempt not found" });
     }
+    const isPro = await hasProAccess(req.user.id);
     res.json({
       attempt: {
-        ...attempt.rawGraderResult,
+        ...gateFeedback(attempt.rawGraderResult, ["overall_band", "preCheck"], isPro),
         attemptId: attempt.id,
         topicLabel: attempt.topicLabel,
         targetBand: attempt.targetBand,
@@ -223,7 +230,11 @@ router.post("/drill-attempts", requireAuth, requireVerifiedEmail, drillAudioUplo
       rawGraderResult: gradedResult,
     });
 
-    res.status(201).json({ ...gradedResult, attemptId: attempt.id });
+    const isPro = await hasProAccess(req.user.id);
+    res.status(201).json({
+      ...gateFeedback(gradedResult, ["provisional_overall_band", "preCheck"], isPro),
+      attemptId: attempt.id,
+    });
   } catch (err) {
     console.error("Speaking drill grading failed:", err);
     res.status(502).json({ error: "Grading failed. Please try again." });
@@ -245,9 +256,10 @@ router.get("/drill-attempts/:id", requireAuth, async (req, res) => {
     if (!attempt || attempt.userId !== req.user.id) {
       return res.status(404).json({ error: "Attempt not found" });
     }
+    const isPro = await hasProAccess(req.user.id);
     res.json({
       attempt: {
-        ...attempt.rawGraderResult,
+        ...gateFeedback(attempt.rawGraderResult, ["provisional_overall_band", "preCheck"], isPro),
         attemptId: attempt.id,
         topicLabel: attempt.topicLabel,
         part: attempt.part,
