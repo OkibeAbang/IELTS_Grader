@@ -1,47 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
+import usePersistedState from '../../hooks/usePersistedState';
+import usePersistedCountdown, { formatCountdown } from '../../hooks/usePersistedCountdown';
 import QuestionInput from '../QuestionInput';
 
 const TIMER_SECONDS = 20 * 60;
 
-function formatTime(totalSeconds) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-export default function PassageViewer({ passage, answers, onAnswerChange, onSubmit, submitting, showTimer = true }) {
-  const [timerEnabled, setTimerEnabled] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(TIMER_SECONDS);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const intervalRef = useRef(null);
-
-  useEffect(() => {
-    if (!timerRunning) return undefined;
-    intervalRef.current = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(intervalRef.current);
-          setTimerRunning(false);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [timerRunning]);
+export default function PassageViewer({ passage, answers, onAnswerChange, onSubmit, submitting, showTimer = true, persistKey }) {
+  const [timerEnabled, setTimerEnabled] = usePersistedState(
+    persistKey ? `${persistKey}:timerEnabled` : 'passage-viewer:timerEnabled-unkeyed',
+    false
+  );
+  const countdown = usePersistedCountdown(
+    persistKey ? `${persistKey}:timer` : 'passage-viewer:timer-unkeyed',
+    TIMER_SECONDS
+  );
 
   function toggleTimer() {
-    if (timerRunning) {
-      setTimerRunning(false);
+    if (countdown.running) {
+      countdown.pause();
     } else {
-      if (secondsLeft === 0) setSecondsLeft(TIMER_SECONDS);
-      setTimerRunning(true);
+      countdown.start();
     }
   }
 
   function resetTimer() {
-    setTimerRunning(false);
-    setSecondsLeft(TIMER_SECONDS);
+    countdown.reset();
   }
 
   const answeredCount = Object.values(answers).filter((v) => v && String(v).trim()).length;
@@ -67,9 +49,9 @@ export default function PassageViewer({ passage, answers, onAnswerChange, onSubm
 
         {showTimer && timerEnabled && (
           <div className="timer">
-            <span className={secondsLeft === 0 ? 'timer-expired' : ''}>{formatTime(secondsLeft)}</span>
+            <span className={countdown.secondsLeft === 0 ? 'timer-expired' : ''}>{formatCountdown(countdown.secondsLeft)}</span>
             <button type="button" onClick={toggleTimer}>
-              {timerRunning ? 'Pause' : 'Start'}
+              {countdown.running ? 'Pause' : 'Start'}
             </button>
             <button type="button" onClick={resetTimer}>
               Reset

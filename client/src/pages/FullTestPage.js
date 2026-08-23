@@ -6,7 +6,8 @@ import { fetchListeningSection, submitListeningAttempt, fetchListeningAttemptDet
 import { fetchReadingPassage, submitReadingAttempt, fetchReadingAttemptDetail } from '../api/reading';
 import { gradeEssay, fetchEssayAttemptDetail } from '../api/writing';
 import { fetchSpeakingTopic, submitSpeakingAttempt, fetchAttemptDetail } from '../api/speaking';
-import useCountdown, { formatCountdown } from '../hooks/useCountdown';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import usePersistedCountdown, { formatCountdown } from '../hooks/usePersistedCountdown';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
 import PassageViewer from '../components/reading/PassageViewer';
@@ -17,11 +18,34 @@ import PartRecorder from '../components/speaking/PartRecorder';
 import ReviewSubmit from '../components/speaking/ReviewSubmit';
 import FullTestResultsView from '../components/FullTestResultsView';
 
+// Every key this page (and its step sub-components) persists — cleared as a
+// group whenever a brand new Full Test starts, so a fresh attempt never
+// inherits state from a previous, possibly-abandoned one.
+const FULL_TEST_KEYS = [
+  'full-test:step',
+  'full-test:fullTestId',
+  'full-test:assignment',
+  'full-test:listeningAttemptId',
+  'full-test:readingAttemptId',
+  'full-test:writingTask1AttemptId',
+  'full-test:writingTask2AttemptId',
+  'full-test:resultsData',
+  'full-test-listening:answers',
+  'full-test-listening:timer',
+  'full-test-reading:answers',
+  'full-test-reading:timer',
+  'full-test-writing-task1:essay',
+  'full-test-writing-task1:timer',
+  'full-test-writing-task2:essay',
+  'full-test-writing-task2:timer',
+  'full-test-speaking:recordings',
+];
+
 function ListeningStep({ sectionId, onSubmit, submitting }) {
   const [section, setSection] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = useState({});
-  const countdown = useCountdown(30 * 60, () => onSubmit(answers));
+  const [answers, setAnswers] = usePersistedState('full-test-listening:answers', {});
+  const countdown = usePersistedCountdown('full-test-listening:timer', 30 * 60, () => onSubmit(answers));
 
   useEffect(() => {
     fetchListeningSection(sectionId).then(setSection).catch((err) => setLoadError(err.message));
@@ -66,8 +90,8 @@ function ListeningStep({ sectionId, onSubmit, submitting }) {
 function ReadingStep({ passageId, onSubmit, submitting }) {
   const [passage, setPassage] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = useState({});
-  const countdown = useCountdown(60 * 60, () => onSubmit(answers));
+  const [answers, setAnswers] = usePersistedState('full-test-reading:answers', {});
+  const countdown = usePersistedCountdown('full-test-reading:timer', 60 * 60, () => onSubmit(answers));
 
   useEffect(() => {
     fetchReadingPassage(passageId).then(setPassage).catch((err) => setLoadError(err.message));
@@ -108,7 +132,7 @@ function ReadingStep({ passageId, onSubmit, submitting }) {
 function SpeakingSteps({ topicId, step, setStep, onFinalSubmit, submitting }) {
   const [topic, setTopic] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [recordings, setRecordings] = useState({});
+  const [recordings, setRecordings] = usePersistedState('full-test-speaking:recordings', {});
 
   useEffect(() => {
     fetchSpeakingTopic(topicId).then(setTopic).catch((err) => setLoadError(err.message));
@@ -154,29 +178,30 @@ function SpeakingSteps({ topicId, step, setStep, onFinalSubmit, submitting }) {
 }
 
 export default function FullTestPage() {
-  const [step, setStep] = useState('intro');
+  const [step, setStep] = usePersistedState('full-test:step', 'intro');
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState(null);
-  const [fullTestId, setFullTestId] = useState(null);
-  const [assignment, setAssignment] = useState(null);
+  const [fullTestId, setFullTestId] = usePersistedState('full-test:fullTestId', null);
+  const [assignment, setAssignment] = usePersistedState('full-test:assignment', null);
 
   const [sectionSubmitting, setSectionSubmitting] = useState(false);
   const [sectionError, setSectionError] = useState(null);
 
-  const [listeningAttemptId, setListeningAttemptId] = useState(null);
-  const [readingAttemptId, setReadingAttemptId] = useState(null);
-  const [writingTask1AttemptId, setWritingTask1AttemptId] = useState(null);
-  const [writingTask2AttemptId, setWritingTask2AttemptId] = useState(null);
+  const [listeningAttemptId, setListeningAttemptId] = usePersistedState('full-test:listeningAttemptId', null);
+  const [readingAttemptId, setReadingAttemptId] = usePersistedState('full-test:readingAttemptId', null);
+  const [writingTask1AttemptId, setWritingTask1AttemptId] = usePersistedState('full-test:writingTask1AttemptId', null);
+  const [writingTask2AttemptId, setWritingTask2AttemptId] = usePersistedState('full-test:writingTask2AttemptId', null);
 
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState(null);
-  const [resultsData, setResultsData] = useState(null);
+  const [resultsData, setResultsData] = usePersistedState('full-test:resultsData', null);
 
   async function handleStart() {
     setStarting(true);
     setStartError(null);
     try {
       const data = await startFullTest();
+      FULL_TEST_KEYS.forEach(clearPersistedState);
       setFullTestId(data.fullTest.id);
       setAssignment(data.assignment);
       setStep('listening');
@@ -301,7 +326,8 @@ export default function FullTestPage() {
             Listening (30 min), Reading (60 min), Writing (60 min across two tasks), and Speaking
             (~15 min). You can submit each section early — the timer is an upper limit, not a
             requirement. Once you start, content is assigned automatically, just like the real
-            exam.
+            exam. If you navigate to another section mid-test, you can pick up right where you
+            left off.
           </p>
           {startError && <div className="error-banner">{startError}</div>}
           <button type="button" className="submit-btn" onClick={handleStart} disabled={starting}>
@@ -322,6 +348,7 @@ export default function FullTestPage() {
 
       {step === 'writing-task1' && assignment && (
         <FullTestEssayStep
+          persistKey="full-test-writing-task1"
           taskType="task1"
           taskLabel="Writing Task 1"
           prompt={assignment.writingTask1Prompt.text}
@@ -333,6 +360,7 @@ export default function FullTestPage() {
 
       {step === 'writing-task2' && assignment && (
         <FullTestEssayStep
+          persistKey="full-test-writing-task2"
           taskType="task2"
           taskLabel="Writing Task 2"
           prompt={assignment.writingTask2Prompt.text}

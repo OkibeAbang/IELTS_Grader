@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchSpeakingTopic, submitSpeakingDrill } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import QuestionTypePicker from '../components/QuestionTypePicker';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
@@ -16,15 +17,17 @@ const PART_OPTIONS = [
   { value: 'part3', label: 'Part 3', description: 'Discussion' },
 ];
 
+const KEYS = ['speaking-drill:topicId', 'speaking-drill:part', 'speaking-drill:result'];
+
 export default function LearnSpeakingPage() {
   const { user } = useAuth();
-  const [topicId, setTopicId] = useState(null);
+  const [topicId, setTopicId] = usePersistedState('speaking-drill:topicId', null);
   const [topic, setTopic] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [part, setPart] = useState(null);
+  const [part, setPart] = usePersistedState('speaking-drill:part', null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('speaking-drill:result', null);
 
   useEffect(() => {
     if (!topicId) return;
@@ -33,6 +36,7 @@ export default function LearnSpeakingPage() {
     fetchSpeakingTopic(topicId)
       .then(setTopic)
       .catch((err) => setLoadError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topicId]);
 
   async function handleRecordingComplete({ audioBlob, durationSec }) {
@@ -49,6 +53,7 @@ export default function LearnSpeakingPage() {
   }
 
   function handleChooseAnother() {
+    KEYS.forEach(clearPersistedState);
     setTopicId(null);
     setTopic(null);
     setPart(null);

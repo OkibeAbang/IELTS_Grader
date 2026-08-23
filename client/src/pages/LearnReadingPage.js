@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchReadingPassages, fetchReadingPassage, submitReadingDrill } from '../api/reading';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import QuestionTypePicker from '../components/QuestionTypePicker';
 import PassageViewer from '../components/reading/PassageViewer';
 import ReadingResultsView from '../components/ReadingResultsView';
@@ -12,14 +13,16 @@ const TYPE_LABELS = {
   short_answer: { label: 'Short Answer', description: 'Fill in the blank' },
 };
 
+const KEYS = ['reading-drill:questionType', 'reading-drill:answers', 'reading-drill:result'];
+
 export default function LearnReadingPage() {
   const [passage, setPassage] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [questionType, setQuestionType] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [questionType, setQuestionType] = usePersistedState('reading-drill:questionType', null);
+  const [answers, setAnswers] = usePersistedState('reading-drill:answers', {});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('reading-drill:result', null);
 
   useEffect(() => {
     fetchReadingPassages()
@@ -52,6 +55,7 @@ export default function LearnReadingPage() {
   }
 
   function handleChooseAnother() {
+    KEYS.forEach(clearPersistedState);
     setQuestionType(null);
     setAnswers({});
     setSubmitError(null);
@@ -85,6 +89,7 @@ export default function LearnReadingPage() {
           onSubmit={handleSubmit}
           submitting={submitting}
           showTimer={false}
+          persistKey="reading-drill"
         />
       )}
 

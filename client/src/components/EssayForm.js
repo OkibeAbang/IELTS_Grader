@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import usePersistedState from '../hooks/usePersistedState';
+import usePersistedCountdown, { formatCountdown } from '../hooks/usePersistedCountdown';
 import PromptPicker from './PromptPicker';
 
 const MIN_WORDS = { task1: 150, task2: 250 };
@@ -9,51 +10,26 @@ function countWords(text) {
   return trimmed ? trimmed.split(/\s+/).length : 0;
 }
 
-function formatTime(totalSeconds) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-export default function EssayForm({ onSubmit, submitting }) {
-  const [taskType, setTaskType] = useState('task2');
-  const [prompt, setPrompt] = useState('');
-  const [essay, setEssay] = useState('');
-  const [timerEnabled, setTimerEnabled] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(TIMER_SECONDS);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const intervalRef = useRef(null);
+export default function EssayForm({ onSubmit, submitting, persistKey = 'essay-grader' }) {
+  const [taskType, setTaskType] = usePersistedState(`${persistKey}:taskType`, 'task2');
+  const [prompt, setPrompt] = usePersistedState(`${persistKey}:prompt`, '');
+  const [essay, setEssay] = usePersistedState(`${persistKey}:essay`, '');
+  const [timerEnabled, setTimerEnabled] = usePersistedState(`${persistKey}:timerEnabled`, false);
+  const countdown = usePersistedCountdown(`${persistKey}:timer`, TIMER_SECONDS);
 
   const wordCount = countWords(essay);
   const minWords = MIN_WORDS[taskType];
 
-  useEffect(() => {
-    if (!timerRunning) return undefined;
-    intervalRef.current = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(intervalRef.current);
-          setTimerRunning(false);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [timerRunning]);
-
   function toggleTimer() {
-    if (timerRunning) {
-      setTimerRunning(false);
+    if (countdown.running) {
+      countdown.pause();
     } else {
-      if (secondsLeft === 0) setSecondsLeft(TIMER_SECONDS);
-      setTimerRunning(true);
+      countdown.start();
     }
   }
 
   function resetTimer() {
-    setTimerRunning(false);
-    setSecondsLeft(TIMER_SECONDS);
+    countdown.reset();
   }
 
   function handleSubmit(e) {
@@ -86,11 +62,11 @@ export default function EssayForm({ onSubmit, submitting }) {
 
         {timerEnabled && (
           <div className="timer">
-            <span className={secondsLeft === 0 ? 'timer-expired' : ''}>
-              {formatTime(secondsLeft)}
+            <span className={countdown.secondsLeft === 0 ? 'timer-expired' : ''}>
+              {formatCountdown(countdown.secondsLeft)}
             </span>
             <button type="button" onClick={toggleTimer}>
-              {timerRunning ? 'Pause' : 'Start'}
+              {countdown.running ? 'Pause' : 'Start'}
             </button>
             <button type="button" onClick={resetTimer}>
               Reset

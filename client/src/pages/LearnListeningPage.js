@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchListeningSections, fetchListeningSection, submitListeningDrill } from '../api/listening';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import QuestionTypePicker from '../components/QuestionTypePicker';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
@@ -12,14 +13,16 @@ const TYPE_LABELS = {
   short_answer: { label: 'Short Answer', description: 'Form/note completion' },
 };
 
+const KEYS = ['listening-drill:questionType', 'listening-drill:answers', 'listening-drill:result'];
+
 export default function LearnListeningPage() {
   const [section, setSection] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [questionType, setQuestionType] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [questionType, setQuestionType] = usePersistedState('listening-drill:questionType', null);
+  const [answers, setAnswers] = usePersistedState('listening-drill:answers', {});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('listening-drill:result', null);
 
   useEffect(() => {
     fetchListeningSections()
@@ -52,6 +55,7 @@ export default function LearnListeningPage() {
   }
 
   function handleChooseAnother() {
+    KEYS.forEach(clearPersistedState);
     setQuestionType(null);
     setAnswers({});
     setSubmitError(null);

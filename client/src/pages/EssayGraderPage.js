@@ -4,9 +4,10 @@ import { ArrowLeft } from 'lucide-react';
 import EssayForm from '../components/EssayForm';
 import ResultsView from '../components/ResultsView';
 import { gradeEssay } from '../api/writing';
+import usePersistedState from '../hooks/usePersistedState';
 
 export default function EssayGraderPage() {
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('essay-grader:result', null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 

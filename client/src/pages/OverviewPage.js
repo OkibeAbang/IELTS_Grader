@@ -38,6 +38,13 @@ const TOOLS = [
   },
 ];
 
+const PREVIEW_TAB_ROUTES = {
+  writing: '/essay-grader',
+  reading: '/reading',
+  listening: '/listening',
+  speaking: '/speaking',
+};
+
 const PREVIEW_TABS = [
   {
     key: 'writing',
@@ -269,10 +276,16 @@ export default function OverviewPage() {
             <div className="marketing-preview-copy">
               <h3>{activePreview.heading}</h3>
               <p>{activePreview.body}</p>
-              <Link to="/signup" className="submit-btn">Start practicing free</Link>
+              <Link to={user ? PREVIEW_TAB_ROUTES[activeTab] : '/signup'} className="submit-btn">
+                {user ? `Try ${activePreview.label}` : 'Start practicing free'}
+              </Link>
             </div>
 
-            <Link to="/signup" className="preview-mockup-wrapper" aria-label="Sign up to try it yourself">
+            <Link
+              to={user ? PREVIEW_TAB_ROUTES[activeTab] : '/signup'}
+              className="preview-mockup-wrapper"
+              aria-label={user ? `Try ${activePreview.label}` : 'Sign up to try it yourself'}
+            >
               <PreviewMockup tab={activeTab} />
               <span className="preview-mockup-overlay">
                 Try it yourself <ArrowRight size={18} aria-hidden="true" />

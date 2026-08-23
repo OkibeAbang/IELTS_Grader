@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchSpeakingTopic, submitSpeakingAttempt, fetchLiveVoiceStatus } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
 import LiveSpeakingSession from '../components/speaking/LiveSpeakingSession';
@@ -13,19 +14,30 @@ import SpeakingResultsView from '../components/SpeakingResultsView';
 
 const TARGET_BAND_OPTIONS = [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4];
 
+const KEYS = [
+  'speaking-practice:topicId',
+  'speaking-practice:targetBand',
+  'speaking-practice:step',
+  'speaking-practice:recordings',
+  'speaking-practice:result',
+];
+
 export default function SpeakingPracticePage() {
   const { user, resendVerification } = useAuth();
-  const [topicId, setTopicId] = useState(null);
+  const [topicId, setTopicId] = usePersistedState('speaking-practice:topicId', null);
   const [topic, setTopic] = useState(null);
-  const [targetBand, setTargetBand] = useState('');
-  const [step, setStep] = useState('pick'); // pick | live | part1 | part2 | part3 | review
-  const [recordings, setRecordings] = useState({});
+  const [targetBand, setTargetBand] = usePersistedState('speaking-practice:targetBand', '');
+  // pick | live | part1 | part2 | part3 | review — a resumed session's step
+  // can be further along than 'pick', so the topic-load effect below must
+  // not blindly reset it back to 'live'/'part1' on every mount.
+  const [step, setStep] = usePersistedState('speaking-practice:step', 'pick');
+  const [recordings, setRecordings] = usePersistedState('speaking-practice:recordings', {});
   const [loadError, setLoadError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendStatus, setResendStatus] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('speaking-practice:result', null);
   const [liveVoiceAvailable, setLiveVoiceAvailable] = useState(false);
   const [useLiveVoice, setUseLiveVoice] = useState(false);
 
@@ -40,7 +52,10 @@ export default function SpeakingPracticePage() {
     fetchSpeakingTopic(topicId)
       .then((t) => {
         setTopic(t);
-        setStep(useLiveVoice ? 'live' : 'part1');
+        // Only move off 'pick' for a genuinely fresh topic selection — a
+        // resumed session already sitting at 'part2'/'review'/etc. must not
+        // be reset back to the start just because the topic re-fetched.
+        setStep((prev) => (prev === 'pick' ? (useLiveVoice ? 'live' : 'part1') : prev));
       })
       .catch((err) => setLoadError(err.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,6 +111,7 @@ export default function SpeakingPracticePage() {
   }
 
   function handleChooseAnother() {
+    KEYS.forEach(clearPersistedState);
     setTopicId(null);
     setTopic(null);
     setStep('pick');
@@ -113,7 +129,7 @@ export default function SpeakingPracticePage() {
         <h1>Speaking Practice</h1>
         <p className="app-subtitle">
           Work through all 3 parts of an IELTS Speaking test and get feedback against the
-          official rubric.
+          official speaking rubric.
         </p>
       </header>
 

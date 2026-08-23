@@ -4,9 +4,10 @@ import { ArrowLeft } from 'lucide-react';
 import PracticeForm from '../components/PracticeForm';
 import SectionResultsView from '../components/SectionResultsView';
 import { gradeSection } from '../api/writing';
+import usePersistedState from '../hooks/usePersistedState';
 
 export default function LearnWritingPage() {
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('writing-drill:result', null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 

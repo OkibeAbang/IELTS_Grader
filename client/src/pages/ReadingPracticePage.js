@@ -2,19 +2,29 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchReadingPassage, submitReadingAttempt } from '../api/reading';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import PassagePicker from '../components/reading/PassagePicker';
 import PassageViewer from '../components/reading/PassageViewer';
 import ReadingResultsView from '../components/ReadingResultsView';
 
+const KEYS = [
+  'reading-practice:step',
+  'reading-practice:passageId',
+  'reading-practice:answers',
+  'reading-practice:result',
+  'reading-practice:timerEnabled',
+  'reading-practice:timer',
+];
+
 export default function ReadingPracticePage() {
-  const [step, setStep] = useState('pick');
-  const [passageId, setPassageId] = useState(null);
+  const [step, setStep] = usePersistedState('reading-practice:step', 'pick');
+  const [passageId, setPassageId] = usePersistedState('reading-practice:passageId', null);
   const [passage, setPassage] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = usePersistedState('reading-practice:answers', {});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('reading-practice:result', null);
 
   useEffect(() => {
     if (!passageId) return;
@@ -26,6 +36,7 @@ export default function ReadingPracticePage() {
         setStep('passage');
       })
       .catch((err) => setLoadError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [passageId]);
 
   function handleAnswerChange(questionId, value) {
@@ -46,6 +57,7 @@ export default function ReadingPracticePage() {
   }
 
   function handleChooseAnother() {
+    KEYS.forEach(clearPersistedState);
     setPassageId(null);
     setPassage(null);
     setStep('pick');
@@ -79,6 +91,7 @@ export default function ReadingPracticePage() {
           onAnswerChange={handleAnswerChange}
           onSubmit={handleSubmit}
           submitting={submitting}
+          persistKey="reading-practice"
         />
       )}
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import usePersistedState from '../hooks/usePersistedState';
 import PromptPicker from './PromptPicker';
 
 const SECTION_LABELS = {
@@ -18,11 +18,11 @@ function countWords(text) {
   return trimmed ? trimmed.split(/\s+/).length : 0;
 }
 
-export default function PracticeForm({ onSubmit, submitting }) {
-  const [taskType, setTaskType] = useState('task2');
-  const [section, setSection] = useState('introduction');
-  const [prompt, setPrompt] = useState('');
-  const [text, setText] = useState('');
+export default function PracticeForm({ onSubmit, submitting, persistKey = 'writing-drill' }) {
+  const [taskType, setTaskType] = usePersistedState(`${persistKey}:taskType`, 'task2');
+  const [section, setSection] = usePersistedState(`${persistKey}:section`, 'introduction');
+  const [prompt, setPrompt] = usePersistedState(`${persistKey}:prompt`, '');
+  const [text, setText] = usePersistedState(`${persistKey}:text`, '');
 
   const wordCount = countWords(text);
 

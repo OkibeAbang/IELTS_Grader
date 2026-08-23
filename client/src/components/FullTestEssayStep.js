@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import useCountdown, { formatCountdown } from '../hooks/useCountdown';
+import { useEffect } from 'react';
+import usePersistedState from '../hooks/usePersistedState';
+import usePersistedCountdown, { formatCountdown } from '../hooks/usePersistedCountdown';
 
 const MIN_WORDS = { task1: 150, task2: 250 };
 
@@ -8,9 +9,9 @@ function countWords(text) {
   return trimmed ? trimmed.split(/\s+/).length : 0;
 }
 
-export default function FullTestEssayStep({ taskType, taskLabel, prompt, minutes, onSubmit, submitting }) {
-  const [essay, setEssay] = useState('');
-  const countdown = useCountdown(minutes * 60, () => onSubmit(essay));
+export default function FullTestEssayStep({ persistKey, taskType, taskLabel, prompt, minutes, onSubmit, submitting }) {
+  const [essay, setEssay] = usePersistedState(`${persistKey}:essay`, '');
+  const countdown = usePersistedCountdown(`${persistKey}:timer`, minutes * 60, () => onSubmit(essay));
 
   useEffect(() => {
     countdown.start();

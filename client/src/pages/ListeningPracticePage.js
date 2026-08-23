@@ -2,20 +2,23 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchListeningSection, submitListeningAttempt } from '../api/listening';
+import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import SectionPicker from '../components/listening/SectionPicker';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
 import ListeningResultsView from '../components/ListeningResultsView';
 
+const KEYS = ['listening-practice:step', 'listening-practice:sectionId', 'listening-practice:answers', 'listening-practice:result'];
+
 export default function ListeningPracticePage() {
-  const [step, setStep] = useState('pick');
-  const [sectionId, setSectionId] = useState(null);
+  const [step, setStep] = usePersistedState('listening-practice:step', 'pick');
+  const [sectionId, setSectionId] = usePersistedState('listening-practice:sectionId', null);
   const [section, setSection] = useState(null);
   const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = usePersistedState('listening-practice:answers', {});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = usePersistedState('listening-practice:result', null);
 
   useEffect(() => {
     if (!sectionId) return;
@@ -27,6 +30,7 @@ export default function ListeningPracticePage() {
         setStep('section');
       })
       .catch((err) => setLoadError(err.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId]);
 
   function handleAnswerChange(questionId, value) {
@@ -47,6 +51,7 @@ export default function ListeningPracticePage() {
   }
 
   function handleChooseAnother() {
+    KEYS.forEach(clearPersistedState);
     setSectionId(null);
     setSection(null);
     setStep('pick');
