@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LayoutGrid, GraduationCap, BarChart3, CreditCard, LogOut, LogIn, PanelLeft } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
@@ -143,11 +143,12 @@ function Sidebar() {
 }
 
 function AppLayout() {
+  const location = useLocation();
   return (
     <div className="app-shell">
       <Sidebar />
       <div className="main-content">
-        <div className="main-content-inner">
+        <div className="main-content-inner page-transition" key={location.pathname}>
           <Outlet />
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth';
+import useDelayedNotice from '../hooks/useDelayedNotice';
 
 export default function SignupPage() {
   const { signup, loginWithGoogle } = useAuth();
@@ -10,6 +11,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const showColdStartHint = useDelayedNotice(submitting);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -65,6 +67,12 @@ export default function SignupPage() {
         <button type="submit" className="submit-btn" disabled={submitting}>
           {submitting ? 'Creating account…' : 'Sign up'}
         </button>
+        {showColdStartHint && (
+          <p className="cold-start-hint">
+            Still working on it — if the server's been idle for a while, this can take up to a
+            minute.
+          </p>
+        )}
       </form>
 
       {process.env.REACT_APP_GOOGLE_CLIENT_ID && (

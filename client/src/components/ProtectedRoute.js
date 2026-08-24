@@ -1,11 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import LoadingScreen from './LoadingScreen';
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <p className="auth-loading">Loading…</p>;
+    return <LoadingScreen message="Loading your account…" />;
   }
   if (!user) {
     return <Navigate to="/login" replace />;
