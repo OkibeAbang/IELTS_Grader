@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Pencil, CreditCard, Timer } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { PAYWALL_ENABLED } from '../config/paywall';
 
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
@@ -11,7 +12,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
-  const isPro = user.subscriptionTier === 'pro';
+  const isPro = !PAYWALL_ENABLED || user.subscriptionTier === 'pro';
   const displayName = user.displayName || user.email.split('@')[0];
   const initial = displayName[0].toUpperCase();
 
@@ -56,9 +57,11 @@ export default function ProfilePage() {
           <span className="profile-avatar" aria-hidden="true">{initial}</span>
           <span className="profile-card-name">{displayName}</span>
           <span className="profile-card-email">{user.email}</span>
-          <span className={isPro ? 'tier-badge tier-badge-pro' : 'tier-badge'}>
-            {isPro ? 'PRO PLAN' : 'FREE PLAN'}
-          </span>
+          {PAYWALL_ENABLED && (
+            <span className={isPro ? 'tier-badge tier-badge-pro' : 'tier-badge'}>
+              {isPro ? 'PRO PLAN' : 'FREE PLAN'}
+            </span>
+          )}
           <button type="button" className="btn-secondary" onClick={handleLogout}>
             <LogOut size={16} aria-hidden="true" /> Sign Out
           </button>
@@ -115,26 +118,30 @@ export default function ProfilePage() {
             )}
           </section>
 
-          <section className="profile-section">
-            <h2>Subscription Details</h2>
-            <div className="billing-card">
-              <span className="pricing-card-title">{isPro ? 'Pro' : 'Free'} plan</span>
-              {isPro && user.subscriptionCurrentPeriodEnd && (
-                <p className="hub-card-description">
-                  Renews {new Date(user.subscriptionCurrentPeriodEnd).toLocaleDateString()}
-                </p>
-              )}
-              {!isPro && <p className="hub-card-description">Limited access to detailed feedback and the study plan.</p>}
-              <Link to="/billing" className="submit-btn">Manage Billing</Link>
-            </div>
-          </section>
+          {PAYWALL_ENABLED && (
+            <section className="profile-section">
+              <h2>Subscription Details</h2>
+              <div className="billing-card">
+                <span className="pricing-card-title">{isPro ? 'Pro' : 'Free'} plan</span>
+                {isPro && user.subscriptionCurrentPeriodEnd && (
+                  <p className="hub-card-description">
+                    Renews {new Date(user.subscriptionCurrentPeriodEnd).toLocaleDateString()}
+                  </p>
+                )}
+                {!isPro && <p className="hub-card-description">Limited access to detailed feedback and the study plan.</p>}
+                <Link to="/billing" className="submit-btn">Manage Billing</Link>
+              </div>
+            </section>
+          )}
 
           <section className="profile-section">
             <h2>Quick Actions</h2>
             <div className="profile-quick-actions">
-              <Link to="/billing" className="btn-secondary">
-                <CreditCard size={16} aria-hidden="true" /> Manage Subscription
-              </Link>
+              {PAYWALL_ENABLED && (
+                <Link to="/billing" className="btn-secondary">
+                  <CreditCard size={16} aria-hidden="true" /> Manage Subscription
+                </Link>
+              )}
               <Link to="/full-test" className="btn-secondary">
                 <Timer size={16} aria-hidden="true" /> Start Full Test
               </Link>

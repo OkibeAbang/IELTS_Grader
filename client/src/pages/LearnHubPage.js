@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { fetchStudyPlan, generateStudyPlan } from '../api/studyPlan';
+import { PAYWALL_ENABLED } from '../config/paywall';
 import OnboardingQuestionnaire from '../components/OnboardingQuestionnaire';
 import StudyPlanView from '../components/StudyPlanView';
 
 export default function LearnHubPage() {
   const { user } = useAuth();
-  const isPro = user?.subscriptionTier === 'pro';
+  const isPro = !PAYWALL_ENABLED || user?.subscriptionTier === 'pro';
 
   const [studyPlan, setStudyPlan] = useState(null);
   const [loading, setLoading] = useState(true);

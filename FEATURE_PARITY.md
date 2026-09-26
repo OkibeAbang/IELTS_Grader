@@ -14,7 +14,7 @@ Tracking doc for closing the gap with ieltspractice.io (a full-suite IELTS prep 
 
 - [x] ✅ Sidebar now matches the 4-section shape — shipped 2026-08-17: `Practice` (hub page linking to Essay Grading/Reading/Listening/Speaking), `Learn` (hub page, Writing enabled + Reading/Listening/Speaking "Coming soon"), `Dashboard` (our name for their `Stats`). See `/Users/mac/.claude/plans/lexical-snuggling-sprout.md`
 - [x] ✅ Confirmed 2026-08-18 — every real section (Practice, Learn, Dashboard, and every practice/history page) is `ProtectedRoute`-gated and redirects to `/login` when signed out; the only public routes are the marketing page (`/`) and the auth pages themselves. Nothing to change here, this was already the case
-- [ ] ❌ Persistent account widget (avatar initials + name) pinned at the bottom of the sidebar
+- [x] ✅ Persistent account widget (avatar initials + name) pinned at the bottom of the sidebar — shipped as part of the Profile Settings work (`sidebar-profile-link`/`sidebar-plan-badge` in `client/src/App.js`), doc just wasn't updated at the time
 - [ ] ❌ Sitewide promo banner slot ("Fresh practice material every week") — a dismissible/rotating announcement bar
 
 ## 2. Dashboard home

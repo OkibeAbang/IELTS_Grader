@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useAuth } from '../hooks/useAuth';
+import { PAYWALL_ENABLED } from '../config/paywall';
 
 const CHECKLIST = [
   'Full essay grading for Writing Task 1 & 2, or practice one section at a time',
@@ -182,7 +183,7 @@ export default function OverviewPage() {
             <Link to="/reading">Reading</Link>
             <Link to="/listening">Listening</Link>
             <Link to="/speaking">Speaking</Link>
-            <Link to="/pricing">Pricing</Link>
+            {PAYWALL_ENABLED && <Link to="/pricing">Pricing</Link>}
           </nav>
           <div className="marketing-nav-actions">
             <ThemeToggle />

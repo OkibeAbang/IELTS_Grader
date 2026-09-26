@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LayoutGrid, GraduationCap, BarChart3, CreditCard, LogOut, LogIn, PanelLeft } from 'lucide-react';
+import { PAYWALL_ENABLED } from './config/paywall';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './hooks/useAuth';
@@ -104,7 +105,7 @@ function Sidebar() {
             <span className="sidebar-item-label">Dashboard</span>
           </NavLink>
         )}
-        {user && (
+        {user && PAYWALL_ENABLED && (
           <NavLink to="/billing" className={sidebarLinkClass} title="Billing" aria-label="Billing">
             <span className="sidebar-item-icon"><CreditCard size={18} aria-hidden="true" /></span>
             <span className="sidebar-item-label">Billing</span>
@@ -117,10 +118,12 @@ function Sidebar() {
         {user ? (
           <>
             <Link to="/profile" className="sidebar-profile-link" title="Profile settings">
-              <span className={isPro ? 'sidebar-plan-badge sidebar-plan-badge-pro' : 'sidebar-plan-badge'}>
-                <span className="sidebar-plan-dot" aria-hidden="true" />
-                {isPro ? 'Pro Plan' : 'Free Plan'}
-              </span>
+              {PAYWALL_ENABLED && (
+                <span className={isPro ? 'sidebar-plan-badge sidebar-plan-badge-pro' : 'sidebar-plan-badge'}>
+                  <span className="sidebar-plan-dot" aria-hidden="true" />
+                  {isPro ? 'Pro Plan' : 'Free Plan'}
+                </span>
+              )}
               <span className="sidebar-profile-identity">
                 <span className="sidebar-profile-avatar" aria-hidden="true">{avatarInitial}</span>
                 <span className="sidebar-profile-name">{displayName}</span>
