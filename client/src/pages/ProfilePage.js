@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Pencil, CreditCard, Timer } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { PAYWALL_ENABLED } from '../config/paywall';
+import { fetchMyClasses, joinClass } from '../api/classes';
 
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
@@ -11,6 +12,31 @@ export default function ProfilePage() {
   const [nameInput, setNameInput] = useState(user.displayName || '');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+
+  const [classes, setClasses] = useState(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState(null);
+
+  useEffect(() => {
+    fetchMyClasses().then(setClasses).catch(() => setClasses([]));
+  }, []);
+
+  async function handleJoinClass(e) {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setJoining(true);
+    setJoinError(null);
+    try {
+      await joinClass(joinCode.trim());
+      setJoinCode('');
+      setClasses(await fetchMyClasses());
+    } catch (err) {
+      setJoinError(err.message);
+    } finally {
+      setJoining(false);
+    }
+  }
 
   const isPro = !PAYWALL_ENABLED || user.subscriptionTier === 'pro';
   const displayName = user.displayName || user.email.split('@')[0];
@@ -115,6 +141,37 @@ export default function ProfilePage() {
                   Cancel
                 </button>
               </div>
+            )}
+          </section>
+
+          <section className="profile-section">
+            <h2>Class</h2>
+            {classes === null ? (
+              <p className="auth-loading">Loading…</p>
+            ) : classes.length > 0 ? (
+              <div>
+                {classes.map((c) => (
+                  <p key={c.id} className="hub-card-description">
+                    {c.name} — {c.teacherName}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <form className="auth-form" onSubmit={handleJoinClass}>
+                <label>
+                  Join code
+                  <input
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                    placeholder="Enter the code your teacher gave you"
+                  />
+                </label>
+                {joinError && <div className="error-banner">{joinError}</div>}
+                <button type="submit" className="submit-btn" disabled={joining}>
+                  {joining ? 'Joining…' : 'Join class'}
+                </button>
+              </form>
             )}
           </section>
 

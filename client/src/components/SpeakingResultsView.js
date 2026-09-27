@@ -15,7 +15,7 @@ function targetGapInfo(overallBand, targetBand) {
 }
 
 export default function SpeakingResultsView({ result }) {
-  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, corrections, part_transcripts, preCheck, proLocked } = result;
+  const { criteria, overall_band, targetBand, top_3_improvements, next_band_gap, corrections, part_transcripts, preCheck, proLocked, teacherReview } = result;
   const gapInfo = targetBand ? targetGapInfo(overall_band, targetBand) : null;
 
   return (
@@ -37,6 +37,16 @@ export default function SpeakingResultsView({ result }) {
           </span>
         )}
       </div>
+
+      {teacherReview && (teacherReview.overrideBand != null || teacherReview.comment) && (
+        <div className="teacher-feedback">
+          <span className="teacher-feedback-label">Teacher feedback</span>
+          {teacherReview.overrideBand != null && (
+            <span className="teacher-feedback-band">Band {teacherReview.overrideBand}</span>
+          )}
+          {teacherReview.comment && <p>{teacherReview.comment}</p>}
+        </div>
+      )}
 
       {proLocked ? (
         <LockedFeedback />

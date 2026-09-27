@@ -11,6 +11,7 @@ export default function SectionResultsView({ result }) {
     confidence_note,
     preCheck,
     proLocked,
+    teacherReview,
   } = result;
 
   return (
@@ -27,6 +28,16 @@ export default function SectionResultsView({ result }) {
         <span className="overall-band-label">Provisional Band (this section only)</span>
         <span className="overall-band-score">{provisional_overall_band}</span>
       </div>
+
+      {teacherReview && (teacherReview.overrideBand != null || teacherReview.comment) && (
+        <div className="teacher-feedback">
+          <span className="teacher-feedback-label">Teacher feedback</span>
+          {teacherReview.overrideBand != null && (
+            <span className="teacher-feedback-band">Band {teacherReview.overrideBand}</span>
+          )}
+          {teacherReview.comment && <p>{teacherReview.comment}</p>}
+        </div>
+      )}
 
       {section_checklist && (
         <div

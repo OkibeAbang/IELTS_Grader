@@ -19,6 +19,9 @@ import {
   deleteAttempt,
 } from "../models/speakingAttempts.js";
 import { deleteAttemptAudio, streamAttemptAudio } from "../audioStorage.js";
+import { hashPassword } from "../auth/passwords.js";
+import { createTeacher, listAllTeachers, deleteTeacher } from "../models/teachers.js";
+import { deleteClassesForTeacher } from "../models/classes.js";
 
 const router = express.Router();
 
@@ -195,6 +198,54 @@ router.get("/attempts/:id/audio/:part", async (req, res) => {
   } catch (err) {
     console.error("Streaming admin audio failed:", err);
     if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });
+  }
+});
+
+router.post("/teachers", async (req, res) => {
+  const { teacherNumber, password, displayName } = req.body ?? {};
+
+  const numberValue = Number(teacherNumber);
+  if (!Number.isInteger(numberValue) || numberValue < 0) {
+    return res.status(400).json({ error: "teacherNumber must be a non-negative integer" });
+  }
+  if (typeof password !== "string" || password.length < 8) {
+    return res.status(400).json({ error: "password must be at least 8 characters" });
+  }
+
+  try {
+    const passwordHash = await hashPassword(password);
+    const teacher = await createTeacher({ teacherNumber: numberValue, passwordHash, displayName: displayName || null });
+    res.status(201).json({ teacher });
+  } catch (err) {
+    if (String(err?.message).includes("UNIQUE")) {
+      return res.status(409).json({ error: "A teacher with that number already exists" });
+    }
+    console.error("Creating teacher failed:", err);
+    res.status(502).json({ error: "Could not create teacher account. Please try again." });
+  }
+});
+
+router.get("/teachers", async (_req, res) => {
+  try {
+    res.json({ teachers: await listAllTeachers() });
+  } catch (err) {
+    console.error("Listing teachers failed:", err);
+    res.status(502).json({ error: "Could not load teachers. Please try again." });
+  }
+});
+
+router.delete("/teachers/:id", async (req, res) => {
+  try {
+    const teacherId = Number(req.params.id);
+    // Classes/rosters owned by this teacher are removed so nothing dangles;
+    // teacher_reviews rows are deliberately left in place — that feedback
+    // already reached a student and shouldn't disappear retroactively.
+    await deleteClassesForTeacher(teacherId);
+    await deleteTeacher(teacherId);
+    res.status(204).end();
+  } catch (err) {
+    console.error("Deleting teacher failed:", err);
+    res.status(502).json({ error: "Could not delete this teacher. Please try again." });
   }
 });
 

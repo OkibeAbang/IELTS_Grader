@@ -3,7 +3,7 @@ import CriterionCard from './CriterionCard';
 import LockedFeedback from './LockedFeedback';
 
 export default function ResultsView({ result }) {
-  const { criteria, overall_band, top_3_improvements, next_band_gap, preCheck, proLocked } = result;
+  const { criteria, overall_band, top_3_improvements, next_band_gap, preCheck, proLocked, teacherReview } = result;
 
   return (
     <div className="results-view">
@@ -19,6 +19,16 @@ export default function ResultsView({ result }) {
         <span className="overall-band-label">Overall Band</span>
         <span className="overall-band-score">{overall_band}</span>
       </div>
+
+      {teacherReview && (teacherReview.overrideBand != null || teacherReview.comment) && (
+        <div className="teacher-feedback">
+          <span className="teacher-feedback-label">Teacher feedback</span>
+          {teacherReview.overrideBand != null && (
+            <span className="teacher-feedback-band">Band {teacherReview.overrideBand}</span>
+          )}
+          {teacherReview.comment && <p>{teacherReview.comment}</p>}
+        </div>
+      )}
 
       {proLocked ? (
         <LockedFeedback />

@@ -902,6 +902,35 @@ h3 {
   line-height: 1.1;
 }
 
+.teacher-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--gold-pale);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.teacher-feedback-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.teacher-feedback-band {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brown-deep);
+}
+
+.teacher-feedback p {
+  color: var(--brown-deep);
+  margin: 0;
+}
+
 .target-gap {
   font-size: 0.85rem;
   font-weight: 600;

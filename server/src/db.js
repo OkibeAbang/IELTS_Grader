@@ -154,6 +154,55 @@ async function initDb() {
   );
 
   await client.execute(`
+    CREATE TABLE IF NOT EXISTS teachers (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      teacher_number INTEGER NOT NULL UNIQUE,
+      username       TEXT NOT NULL UNIQUE,
+      password_hash  TEXT NOT NULL,
+      display_name   TEXT,
+      created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS classes (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      teacher_id  INTEGER NOT NULL REFERENCES teachers(id),
+      name        TEXT NOT NULL,
+      join_code   TEXT NOT NULL UNIQUE,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  await client.execute(`CREATE INDEX IF NOT EXISTS idx_classes_teacher ON classes(teacher_id)`);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS class_students (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      class_id   INTEGER NOT NULL REFERENCES classes(id),
+      user_id    INTEGER NOT NULL REFERENCES users(id),
+      joined_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(class_id, user_id)
+    )
+  `);
+
+  await client.execute(`CREATE INDEX IF NOT EXISTS idx_class_students_user ON class_students(user_id)`);
+
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS teacher_reviews (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      attempt_type   TEXT NOT NULL,
+      attempt_id     INTEGER NOT NULL,
+      teacher_id     INTEGER NOT NULL REFERENCES teachers(id),
+      override_band  REAL,
+      comment        TEXT,
+      created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at     TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(attempt_type, attempt_id)
+    )
+  `);
+
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS study_plans (
       id                      INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id                 INTEGER NOT NULL UNIQUE REFERENCES users(id),

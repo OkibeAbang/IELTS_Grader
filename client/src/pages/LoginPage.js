@@ -94,6 +94,9 @@ export default function LoginPage() {
       <p className="auth-switch">
         <Link to="/forgot-password">Forgot password?</Link>
       </p>
+      <p className="auth-switch">
+        Teacher? <Link to="/teacher/login">Log in here</Link>
+      </p>
     </div>
   );
 }

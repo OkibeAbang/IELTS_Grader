@@ -2,9 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import StatTile from '../components/StatTile';
 import ThemeToggle from '../components/ThemeToggle';
-import { adminLogout, fetchAdminStats, fetchAdminUsers, fetchAdminAttempts, deleteAdminUser } from '../api/admin';
+import {
+  adminLogout,
+  fetchAdminStats,
+  fetchAdminUsers,
+  fetchAdminAttempts,
+  deleteAdminUser,
+  fetchAdminTeachers,
+  createAdminTeacher,
+  deleteAdminTeacher,
+} from '../api/admin';
 
-const TABS = ['Overview', 'Users', 'Attempts'];
+const TABS = ['Overview', 'Users', 'Attempts', 'Teachers'];
 
 function formatDate(value) {
   return new Date(value.replace(' ', 'T') + 'Z').toLocaleString();
@@ -16,8 +25,12 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState(null);
   const [attempts, setAttempts] = useState(null);
+  const [teachers, setTeachers] = useState(null);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [teacherNumber, setTeacherNumber] = useState('');
+  const [teacherPassword, setTeacherPassword] = useState('');
+  const [creatingTeacher, setCreatingTeacher] = useState(false);
 
   const loadStats = useCallback(() => {
     fetchAdminStats().then(setStats).catch((err) => setError(err.message));
@@ -28,13 +41,47 @@ export default function AdminDashboardPage() {
   const loadAttempts = useCallback(() => {
     fetchAdminAttempts().then((data) => setAttempts(data.attempts)).catch((err) => setError(err.message));
   }, []);
+  const loadTeachers = useCallback(() => {
+    fetchAdminTeachers().then(setTeachers).catch((err) => setError(err.message));
+  }, []);
 
   useEffect(() => {
     setError(null);
     if (tab === 'Overview' && !stats) loadStats();
     if (tab === 'Users' && !users) loadUsers();
     if (tab === 'Attempts' && !attempts) loadAttempts();
-  }, [tab, stats, users, attempts, loadStats, loadUsers, loadAttempts]);
+    if (tab === 'Teachers' && !teachers) loadTeachers();
+  }, [tab, stats, users, attempts, teachers, loadStats, loadUsers, loadAttempts, loadTeachers]);
+
+  async function handleCreateTeacher(e) {
+    e.preventDefault();
+    if (!teacherNumber.trim() || !teacherPassword.trim()) return;
+    setCreatingTeacher(true);
+    setError(null);
+    try {
+      await createAdminTeacher({ teacherNumber: Number(teacherNumber), password: teacherPassword });
+      setTeacherNumber('');
+      setTeacherPassword('');
+      loadTeachers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCreatingTeacher(false);
+    }
+  }
+
+  async function handleDeleteTeacher(teacher) {
+    if (!window.confirm(`Delete ${teacher.username}? Their classes will be removed too.`)) return;
+    setDeletingId(teacher.id);
+    try {
+      await deleteAdminTeacher(teacher.id);
+      setTeachers((prev) => prev.filter((t) => t.id !== teacher.id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleLogout() {
     await adminLogout();
@@ -220,6 +267,76 @@ export default function AdminDashboardPage() {
             </table>
           )}
         </div>
+      )}
+
+      {tab === 'Teachers' && (
+        <>
+          <div className="dashboard-section">
+            <h2>Create a teacher account</h2>
+            <form className="auth-form" onSubmit={handleCreateTeacher}>
+              <label>
+                Teacher number
+                <input
+                  type="number"
+                  min="0"
+                  value={teacherNumber}
+                  onChange={(e) => setTeacherNumber(e.target.value)}
+                  placeholder="e.g. 2 → teacher.002"
+                  required
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  type="text"
+                  value={teacherPassword}
+                  onChange={(e) => setTeacherPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  required
+                />
+              </label>
+              <button type="submit" className="submit-btn" disabled={creatingTeacher}>
+                {creatingTeacher ? 'Creating…' : 'Create teacher'}
+              </button>
+            </form>
+          </div>
+
+          <div className="dashboard-section">
+            {!teachers ? (
+              <p className="auth-loading">Loading…</p>
+            ) : teachers.length === 0 ? (
+              <div className="dashboard-empty">No teacher accounts yet.</div>
+            ) : (
+              <table className="attempt-history-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teachers.map((t) => (
+                    <tr key={t.id}>
+                      <td>{t.username}</td>
+                      <td>{formatDate(t.createdAt)}</td>
+                      <td className="attempt-history-actions">
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={deletingId === t.id}
+                          onClick={() => handleDeleteTeacher(t)}
+                        >
+                          {deletingId === t.id ? 'Deleting…' : 'Delete'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

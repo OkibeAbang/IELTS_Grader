@@ -11,6 +11,11 @@ Running list of things we started, deferred, or flagged but haven't closed out. 
 - [ ] **Connect a clean custom domain for production.** Live frontend is currently on the auto-generated `https://ielts-grader-kappa.vercel.app` (Vercel project `ielts-grader`, team `okibes-projects`) — works fine, just not a polished long-term URL. Buy/connect a real domain in Vercel's project settings whenever ready; deliberately deferred for now (2026-09-26).
 - [ ] **Re-add the subscription plans / paywall.** Everything is temporarily free (2026-09-26) — nothing was deleted, just switched off. Flip `PAYWALL_ENABLED` back to `true` in both `server/src/billing/feedbackAccess.js` and `client/src/config/paywall.js` (they're meant to stay in sync) to restore: Pro-gated detailed feedback, the study-plan Pro gate, and the Pricing/Billing navigation + tier badges across the sidebar, Learn, and Profile.
 
+## Deferred feature ideas
+
+- [ ] **Class scheduling + student schedules + notification opt-in.** In the teacher dashboard (built 2026-09-27, see `BUSINESS_FEATURES.md` #3), let a teacher schedule classes/sessions; every student in that class gets their schedule updated automatically and can view it in a new dedicated "Schedule" section of the app. Students should be able to opt in to notifications about schedule changes, reminders, etc. (needs a real notification channel — email at minimum, since there's no push infrastructure today).
+- [ ] **(Long-run, not now) Lightweight D2L-style classroom features.** Teacher-posted homework, class notes, class recordings, etc. — explicitly deferred; the app stays a focused IELTS practice tool for now, not a full classroom platform.
+
 ## Feature parity push
 
 Full checklist in [FEATURE_PARITY.md](FEATURE_PARITY.md) — closing the gap with ieltspractice.io. **28 of 39 tracked items shipped** (Reading/Listening/Writing/Speaking modules, unified dashboard stats, sidebar restructure, Stripe monetization + paywall gating, Full Test placement mode, and the Pro-only study plan). What's left is mostly content-authoring (more passages/sections/topics — the architecture already supports it) plus a few cosmetic dashboard items and open research questions — see the file for the current unchecked list.

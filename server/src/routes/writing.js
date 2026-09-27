@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/essayAttempts.js";
 import { hasProAccess, gateFeedback } from "../billing/feedbackAccess.js";
+import { findReview } from "../models/teacherReviews.js";
 
 const router = express.Router();
 
@@ -131,6 +132,7 @@ router.get("/essays/:id", requireAuth, async (req, res) => {
         promptText: attempt.promptText,
         essayText: attempt.essayText,
         createdAt: attempt.createdAt,
+        teacherReview: await findReview("essay", attempt.id),
       },
     });
   } catch (err) {

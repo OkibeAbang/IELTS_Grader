@@ -41,3 +41,20 @@ export async function fetchAdminAttemptDetail(id) {
 export function adminAttemptAudioUrl(attemptId, part) {
   return `${API_BASE_URL}/api/admin/attempts/${encodeURIComponent(attemptId)}/audio/${part}`;
 }
+
+export async function fetchAdminTeachers() {
+  const data = await requestJson('/api/admin/teachers');
+  return data.teachers;
+}
+
+export async function createAdminTeacher({ teacherNumber, password, displayName }) {
+  const data = await requestJson('/api/admin/teachers', {
+    method: 'POST',
+    body: JSON.stringify({ teacherNumber, password, displayName }),
+  });
+  return data.teacher;
+}
+
+export async function deleteAdminTeacher(id) {
+  await requestJson(`/api/admin/teachers/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

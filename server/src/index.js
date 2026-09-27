@@ -14,6 +14,8 @@ import { adminRouter } from "./routes/admin.js";
 import { billingRouter, stripeWebhookHandler } from "./routes/billing.js";
 import { fullTestRouter } from "./routes/fullTest.js";
 import { studyPlanRouter } from "./routes/studyPlan.js";
+import { teacherRouter } from "./routes/teacher.js";
+import { classesRouter } from "./routes/classes.js";
 import { attachLiveSpeaking } from "./liveSpeaking.js";
 
 // Admin credentials live in a separate, gitignored `secret` file (not .env)
@@ -48,6 +50,8 @@ app.use("/api/admin", adminRouter);
 app.use("/api/billing", billingRouter);
 app.use("/api/full-test", fullTestRouter);
 app.use("/api/study-plan", studyPlanRouter);
+app.use("/api/teacher", teacherRouter);
+app.use("/api/classes", classesRouter);
 
 const PORT = process.env.PORT || 4000;
 const server = http.createServer(app);

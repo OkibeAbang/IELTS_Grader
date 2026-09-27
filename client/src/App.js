@@ -8,11 +8,17 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useAuth } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import TeacherProtectedRoute from './components/TeacherProtectedRoute';
 import ThemeToggle from './components/ThemeToggle';
 import OverviewPage from './pages/OverviewPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminAttemptDetailPage from './pages/AdminAttemptDetailPage';
+import TeacherLoginPage from './pages/TeacherLoginPage';
+import TeacherDashboardPage from './pages/TeacherDashboardPage';
+import TeacherClassDetailPage from './pages/TeacherClassDetailPage';
+import TeacherStudentDetailPage from './pages/TeacherStudentDetailPage';
+import TeacherAttemptReviewPage from './pages/TeacherAttemptReviewPage';
 import PracticeHubPage from './pages/PracticeHubPage';
 import LearnHubPage from './pages/LearnHubPage';
 import PricingPage from './pages/PricingPage';
@@ -178,6 +184,55 @@ function AppRoutes() {
           <AdminProtectedRoute>
             <AdminAttemptDetailPage />
           </AdminProtectedRoute>
+        }
+      />
+      <Route path="/teacher/login" element={<TeacherLoginPage />} />
+      <Route
+        path="/teacher"
+        element={
+          <TeacherProtectedRoute>
+            <TeacherDashboardPage />
+          </TeacherProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/classes/:id"
+        element={
+          <TeacherProtectedRoute>
+            <TeacherClassDetailPage />
+          </TeacherProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/:id"
+        element={
+          <TeacherProtectedRoute>
+            <TeacherStudentDetailPage />
+          </TeacherProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/essays/:id"
+        element={
+          <TeacherProtectedRoute>
+            <TeacherAttemptReviewPage attemptType="essay" />
+          </TeacherProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/speaking-attempts/:id"
+        element={
+          <TeacherProtectedRoute>
+            <TeacherAttemptReviewPage attemptType="speaking" />
+          </TeacherProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/speaking-drill-attempts/:id"
+        element={
+          <TeacherProtectedRoute>
+            <TeacherAttemptReviewPage attemptType="speaking_drill" />
+          </TeacherProtectedRoute>
         }
       />
       <Route element={<AppLayout />}>

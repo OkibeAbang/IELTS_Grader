@@ -9,7 +9,7 @@ const PART_LABELS = {
 };
 
 export default function SpeakingSectionResultsView({ result }) {
-  const { part, criteria, provisional_overall_band, top_improvements, confidence_note, corrections, transcript, preCheck, proLocked } = result;
+  const { part, criteria, provisional_overall_band, top_improvements, confidence_note, corrections, transcript, preCheck, proLocked, teacherReview } = result;
 
   return (
     <div className="results-view">
@@ -27,6 +27,16 @@ export default function SpeakingSectionResultsView({ result }) {
         </span>
         <span className="overall-band-score">{provisional_overall_band}</span>
       </div>
+
+      {teacherReview && (teacherReview.overrideBand != null || teacherReview.comment) && (
+        <div className="teacher-feedback">
+          <span className="teacher-feedback-label">Teacher feedback</span>
+          {teacherReview.overrideBand != null && (
+            <span className="teacher-feedback-band">Band {teacherReview.overrideBand}</span>
+          )}
+          {teacherReview.comment && <p>{teacherReview.comment}</p>}
+        </div>
+      )}
 
       {proLocked ? (
         <LockedFeedback />

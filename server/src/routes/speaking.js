@@ -21,6 +21,7 @@ import {
 } from "../models/speakingDrillAttempts.js";
 import { createLiveTicket } from "../liveSpeaking.js";
 import { hasProAccess, gateFeedback } from "../billing/feedbackAccess.js";
+import { findReview } from "../models/teacherReviews.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -151,6 +152,7 @@ router.get("/attempts/:id", requireAuth, async (req, res) => {
         topicLabel: attempt.topicLabel,
         targetBand: attempt.targetBand,
         createdAt: attempt.createdAt,
+        teacherReview: await findReview("speaking", attempt.id),
       },
     });
   } catch (err) {
@@ -264,6 +266,7 @@ router.get("/drill-attempts/:id", requireAuth, async (req, res) => {
         topicLabel: attempt.topicLabel,
         part: attempt.part,
         createdAt: attempt.createdAt,
+        teacherReview: await findReview("speaking_drill", attempt.id),
       },
     });
   } catch (err) {
