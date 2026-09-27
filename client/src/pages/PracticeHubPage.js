@@ -13,12 +13,14 @@ const PRACTICE_ITEMS = [
     icon: BookOpen,
     title: 'Reading Practice',
     description: 'Read a passage and answer Multiple Choice, True/False/Not Given, and Short Answer questions.',
+    badge: 'Beta',
   },
   {
     to: '/listening',
     icon: Headphones,
     title: 'Listening Practice',
     description: 'Listen to a short recording and answer questions, just like the real IELTS Listening test.',
+    badge: 'Beta',
   },
   {
     to: '/speaking',
@@ -31,6 +33,7 @@ const PRACTICE_ITEMS = [
     icon: Timer,
     title: 'Full Test',
     description: 'A single timed sitting across all 4 skills — see how ready you are for the real exam.',
+    badge: 'Beta',
   },
 ];
 
@@ -46,12 +49,14 @@ const DRILL_ITEMS = [
     icon: BookOpen,
     title: 'Reading Drill',
     description: 'Practice a single question type at a time.',
+    badge: 'Beta',
   },
   {
     to: '/practice/drills/listening',
     icon: Headphones,
     title: 'Listening Drill',
     description: 'Practice a single question type at a time.',
+    badge: 'Beta',
   },
   {
     to: '/practice/drills/speaking',
@@ -74,6 +79,7 @@ export default function PracticeHubPage() {
       <div className="hub-grid">
         {PRACTICE_ITEMS.map((item) => (
           <Link key={item.to} to={item.to} className="hub-card">
+            {item.badge && <span className="hub-card-badge">{item.badge}</span>}
             <span className="hub-card-icon" aria-hidden="true"><item.icon size={28} /></span>
             <span className="hub-card-title">{item.title}</span>
             <p className="hub-card-description">{item.description}</p>
@@ -90,6 +96,7 @@ export default function PracticeHubPage() {
       <div className="hub-grid">
         {DRILL_ITEMS.map((item) => (
           <Link key={item.to} to={item.to} className="hub-card">
+            {item.badge && <span className="hub-card-badge">{item.badge}</span>}
             <span className="hub-card-icon" aria-hidden="true"><item.icon size={28} /></span>
             <span className="hub-card-title">{item.title}</span>
             <p className="hub-card-description">{item.description}</p>

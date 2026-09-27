@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 /**
  * Cloudflare R2 (S3-compatible object storage) when configured, falling back
@@ -105,10 +105,90 @@ async function deleteSpeakingDrillAudio(attempt) {
   }
 }
 
+/**
+ * Static, content-bank audio (rendered once per listening section by
+ * scripts/renderListeningAudio.js, not per user/attempt) — key is just the
+ * section id, no random folder, since re-rendering a section should
+ * overwrite its one file rather than accumulate old versions.
+ */
+function listeningAudioKey(sectionId) {
+  return `listening/${sectionId}.mp3`;
+}
+
+async function saveListeningAudio(sectionId, mp3Buffer) {
+  const key = listeningAudioKey(sectionId);
+  if (r2) {
+    await r2.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, Body: mp3Buffer, ContentType: "audio/mpeg" }));
+  } else {
+    const absPath = localPathFor(key);
+    fs.mkdirSync(path.dirname(absPath), { recursive: true });
+    fs.writeFileSync(absPath, mp3Buffer);
+  }
+  return key;
+}
+
+async function listeningAudioExists(sectionId) {
+  const key = listeningAudioKey(sectionId);
+  if (r2) {
+    try {
+      await r2.send(new HeadObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return fs.existsSync(localPathFor(key));
+}
+
+/**
+ * Streams with HTTP Range support (206 Partial Content) — unlike the
+ * attempt-audio streamers above, this backs a native <audio> element's
+ * scrub bar, which needs Range/Content-Length to know the track's duration
+ * and seek without downloading the whole file first.
+ */
+async function streamListeningAudio(sectionId, req, res) {
+  const key = listeningAudioKey(sectionId);
+  const range = req.headers.range;
+
+  if (r2) {
+    const response = await r2.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key, Range: range }));
+    res.set("Accept-Ranges", "bytes");
+    res.set("Content-Length", String(response.ContentLength));
+    if (response.ContentRange) {
+      res.status(206);
+      res.set("Content-Range", response.ContentRange);
+    }
+    response.Body.pipe(res);
+    return;
+  }
+
+  const absPath = localPathFor(key);
+  const { size } = fs.statSync(absPath);
+  res.set("Accept-Ranges", "bytes");
+
+  if (!range) {
+    res.set("Content-Length", String(size));
+    fs.createReadStream(absPath).pipe(res);
+    return;
+  }
+
+  const match = /bytes=(\d*)-(\d*)/.exec(range);
+  const start = match?.[1] ? Number(match[1]) : 0;
+  const end = match?.[2] ? Number(match[2]) : size - 1;
+
+  res.status(206);
+  res.set("Content-Range", `bytes ${start}-${end}/${size}`);
+  res.set("Content-Length", String(end - start + 1));
+  fs.createReadStream(absPath, { start, end }).pipe(res);
+}
+
 export {
   saveAttemptAudio,
   streamAttemptAudio,
   deleteAttemptAudio,
   saveSpeakingDrillAudio,
   deleteSpeakingDrillAudio,
+  saveListeningAudio,
+  listeningAudioExists,
+  streamListeningAudio,
 };

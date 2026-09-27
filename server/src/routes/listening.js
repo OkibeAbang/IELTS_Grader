@@ -3,6 +3,7 @@ import { getListeningSectionBank, getListeningSection } from "../listeningPassag
 import { scoreListeningAttempt, scoreListeningDrill } from "../scoreListening.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/listeningAttempts.js";
+import { listeningAudioExists, streamListeningAudio } from "../audioStorage.js";
 
 const router = express.Router();
 
@@ -14,6 +15,24 @@ router.get("/sections/:id", (req, res) => {
   const section = getListeningSection(req.params.id);
   if (!section) return res.status(404).json({ error: "Section not found" });
   res.json({ section });
+});
+
+router.get("/sections/:id/audio", async (req, res) => {
+  try {
+    const section = getListeningSection(req.params.id);
+    if (!section) {
+      return res.status(404).json({ error: "Section not found" });
+    }
+    const exists = await listeningAudioExists(section.id);
+    if (!exists) {
+      return res.status(404).json({ error: "Audio hasn't been generated for this section yet" });
+    }
+    res.set("Content-Type", "audio/mpeg");
+    await streamListeningAudio(section.id, req, res);
+  } catch (err) {
+    console.error("Streaming listening audio failed:", err);
+    if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });
+  }
 });
 
 router.post("/attempts", requireAuth, async (req, res) => {

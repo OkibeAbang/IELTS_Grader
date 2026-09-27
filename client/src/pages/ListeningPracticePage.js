@@ -80,7 +80,7 @@ export default function ListeningPracticePage() {
 
       {section && step === 'section' && !result && (
         <div className="listening-layout">
-          <AudioScriptPlayer script={section.script} />
+          <AudioScriptPlayer sectionId={section.id} />
 
           <div className="reading-questions-col">
             {section.questions.map((q, i) => (

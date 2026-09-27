@@ -15,7 +15,17 @@ Tracking doc for turning this app into something we can pitch to IELTS schools, 
 
 ## 2. Pilot program design
 
-- [ ] Design a free/cheap pilot (one cohort, ~4–8 weeks), and decide up front what to measure (usage lift, AI-vs-teacher score agreement rate, etc.) so there's real evidence to bring to the next school afterward.
+- [x] ✅ **Pilot design locked in (2026-09-27), updated now that the teacher dashboard exists.**
+  - **Cohort & length**: one class from the partner school, ~15–25 students, 6 weeks.
+  - **Structure**: teacher creates the class in their dashboard on day 1 and hands out the join code; every student takes a **Full Test** that same day as a baseline. Through weeks 2–5, a light required cadence (2 writing + 2 speaking attempts/week, student's choice of full or drill) — Reading/Listening stay open but ungated. Week 6: a second Full Test — the band delta vs. baseline is the headline result.
+  - **Cost/access**: free for the pilot (paywall's already off). **Prerequisite from item #1**: Gemini must be on paid-tier billing before this starts — free tier's 20/day cap would choke a class this size fast.
+  - **Evidence to collect**:
+    1. Usage lift — attempt counts per student, visible live in the teacher's roster.
+    2. Band improvement — baseline vs. final Full Test, per student and cohort average.
+    3. AI-vs-teacher agreement — the teacher deliberately reviews a sample (~15–20 attempts) through the override feature; whether they leave the AI band as-is or override it, and by how much, IS the trust metric ("agreed within half a band on X% of reviewed attempts").
+    4. A 5-minute end-of-pilot survey for students and the teacher.
+  - **Reporting** — superseded by the teacher dashboard: no manual weekly export needed anymore, the teacher has live self-serve visibility into their class the whole time.
+  - **Privacy**: a one-paragraph data notice (what's collected, that it's not shared with the school beyond aggregate pilot stats) plus a guardian consent line, since students are likely minors — see item #4.
 
 ## 3. Teacher/school-facing features
 

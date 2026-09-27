@@ -1,4 +1,4 @@
-import { requestJson } from './http';
+import { requestJson, API_BASE_URL } from './http';
 
 export async function fetchListeningSections() {
   const data = await requestJson('/api/listening/sections');
@@ -8,6 +8,10 @@ export async function fetchListeningSections() {
 export async function fetchListeningSection(id) {
   const data = await requestJson(`/api/listening/sections/${encodeURIComponent(id)}`);
   return data.section;
+}
+
+export function listeningAudioUrl(sectionId) {
+  return `${API_BASE_URL}/api/listening/sections/${encodeURIComponent(sectionId)}/audio`;
 }
 
 export async function submitListeningAttempt(sectionId, answers) {

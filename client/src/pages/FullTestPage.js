@@ -71,7 +71,7 @@ function ListeningStep({ sectionId, onSubmit, submitting }) {
           {formatCountdown(countdown.secondsLeft)}
         </span>
       </div>
-      <AudioScriptPlayer script={section.script} />
+      <AudioScriptPlayer sectionId={section.id} />
       <div className="reading-questions-col">
         {section.questions.map((q, i) => (
           <div key={q.id} className="reading-question">
