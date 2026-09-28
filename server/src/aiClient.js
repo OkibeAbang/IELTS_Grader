@@ -7,6 +7,14 @@ const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 const MODEL = "gemini-flash-latest";
+// A different model family (not just a different alias of the same model),
+// so it plausibly has separate capacity from MODEL. Used only for audio
+// (Speaking) calls when MODEL is overloaded — Speaking has no cross-provider
+// fallback at all (neither Groq nor Claude accept audio), so this is its
+// only safety net. Confirmed via a real 503 "high demand" outage during
+// testing on 2026-09-28 that MODEL alone, even with retries, isn't always
+// enough.
+const AUDIO_FALLBACK_MODEL = "gemini-flash-lite-latest";
 const CLAUDE_MODEL = "claude-opus-5";
 // Groq's free tier (no card required) — tried before Claude (paid, no free
 // tier) since the whole point of this fallback is staying free. See
@@ -25,24 +33,27 @@ function isRetryableGeminiError(err) {
   return typeof err?.status === "number" && (err.status === 429 || err.status >= 500);
 }
 
-const GEMINI_MAX_ATTEMPTS = 3;
+// Widened from 3 (~3s of total backoff) after a real Gemini "high demand"
+// 503 outage during testing on 2026-09-28 outlasted the old window — most
+// demand spikes are reported as temporary, so giving retries more time to
+// ride one out converts what would've been a hard failure into a success.
+const GEMINI_MAX_ATTEMPTS = 6;
 const GEMINI_RETRY_BASE_DELAY_MS = 1000;
 
 /**
  * Retries transient Gemini errors (429/5xx) with exponential backoff before
- * giving up. This is the only protection audio calls get — generateJson
- * skips the Groq/Claude fallback entirely for `contents`-based (audio) calls
- * since neither provider accepts audio input, so a single 503 would
- * otherwise fail the whole speaking grading request outright.
+ * giving up. `maxAttempts` is overridable so the audio-fallback-model call
+ * in generateJson (a last resort, not the primary path) doesn't also wait
+ * through a full 6-attempt cycle on top of the primary model's.
  */
-async function generateContentWithRetry(params) {
-  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+async function generateContentWithRetry(params, maxAttempts = GEMINI_MAX_ATTEMPTS) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await genAI.models.generateContent(params);
     } catch (err) {
-      if (!isRetryableGeminiError(err) || attempt === GEMINI_MAX_ATTEMPTS) throw err;
+      if (!isRetryableGeminiError(err) || attempt === maxAttempts) throw err;
       const delay = GEMINI_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
-      console.warn(`Gemini call failed (status ${err.status}), retrying in ${delay}ms (attempt ${attempt}/${GEMINI_MAX_ATTEMPTS})`);
+      console.warn(`Gemini call failed (status ${err.status}), retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
       await new Promise((r) => setTimeout(r, delay));
     }
   }
@@ -51,8 +62,8 @@ async function generateContentWithRetry(params) {
 /**
  * Text-only fallbacks used when Gemini's quota/capacity is exhausted. Neither
  * provider's chat API has an audio content type, so these only ever run for
- * plain text calls (contents-based/audio calls skip fallback entirely — see
- * generateJson).
+ * plain text calls — audio calls get a same-provider fallback model instead
+ * (AUDIO_FALLBACK_MODEL, handled directly in generateJson).
  */
 async function generateJsonWithGroq({ systemPrompt, userMessage, maxOutputTokens }) {
   const response = await groq.chat.completions.create({
@@ -94,8 +105,34 @@ async function generateJson({ systemPrompt, userMessage, contents, maxOutputToke
 
     return extractJson(response.text);
   } catch (err) {
-    if (contents || !isRetryableGeminiError(err)) {
+    if (!isRetryableGeminiError(err)) {
       throw err;
+    }
+
+    if (contents) {
+      // Audio (Speaking) calls can't use the Groq/Claude fallback below —
+      // neither accepts audio input — so the only remaining option is a
+      // different Gemini model that may not be hitting the same capacity
+      // limits as MODEL. Fewer attempts than the primary call (this is
+      // already a last resort); if this also fails, that error propagates
+      // as-is, same as any other unrecovered failure.
+      console.warn(
+        `Gemini (${MODEL}) unavailable for audio call (status ${err.status}), trying ${AUDIO_FALLBACK_MODEL}:`,
+        err.message
+      );
+      const fallbackResponse = await generateContentWithRetry(
+        {
+          model: AUDIO_FALLBACK_MODEL,
+          contents,
+          config: {
+            systemInstruction: systemPrompt,
+            maxOutputTokens,
+            responseMimeType: "application/json",
+          },
+        },
+        2
+      );
+      return extractJson(fallbackResponse.text);
     }
 
     // Free option first, paid option second — only reachable at all once

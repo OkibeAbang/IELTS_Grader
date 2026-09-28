@@ -90,8 +90,14 @@ export default function LoginPage() {
       <p className="auth-switch">
         <Link to="/forgot-password">Forgot password?</Link>
       </p>
-      <p className="auth-switch">
-        Teacher? <Link to="/teacher/login">Log in here</Link>
+      <p className="auth-switch auth-switch-row">
+        <span>
+          Teacher? <Link to="/teacher/login">Log in here</Link>
+        </span>
+        <span className="auth-switch-sep" aria-hidden="true">&middot;</span>
+        <span>
+          Admin? <Link to="/admin/login">Log in here</Link>
+        </span>
       </p>
     </div>
   );

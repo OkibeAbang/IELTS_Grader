@@ -650,6 +650,18 @@ h3 {
   text-decoration: underline;
 }
 
+.auth-switch-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auth-switch-sep {
+  color: var(--brown-line);
+}
+
 /* ---- page header ---- */
 
 .app-header {
