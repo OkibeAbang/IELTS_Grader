@@ -20,32 +20,44 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 const VOICE_PALETTE = ["Kore", "Puck", "Charon", "Leda"];
 
 /**
- * Gemini's multi-speaker TTS supports exactly 2 speakers per request. Every
- * listening section written so far has exactly 2 (a transactional dialogue),
- * so that's all this supports today. A 3+-speaker script would need a
+ * Gemini's multi-speaker TTS supports exactly 2 speakers per request, and a
+ * single-voice request (no multiSpeakerVoiceConfig at all) is the only way
+ * to do a 1-speaker monologue. So: 1 speaker -> plain voiceConfig, 2 ->
+ * multiSpeakerVoiceConfig, 3+ -> not supported (would need a
  * per-turn-synthesize-and-concatenate fallback — not built yet since nothing
- * in the content bank needs it; see REMINDERS.md.
+ * in the content bank needs it; see REMINDERS.md).
  */
-function buildSpeakerVoiceConfigs(uniqueSpeakers) {
+function buildSpeechConfig(uniqueSpeakers) {
   if (uniqueSpeakers.length > 2) {
     throw new Error(
       `Listening audio generation only supports up to 2 speakers per section (got ${uniqueSpeakers.length}: ${uniqueSpeakers.join(", ")}). ` +
         `A 3+-speaker script needs a per-turn synthesis fallback that hasn't been built yet.`
     );
   }
-  return uniqueSpeakers.map((speaker, i) => ({
-    speaker,
-    voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_PALETTE[i % VOICE_PALETTE.length] } },
-  }));
+  if (uniqueSpeakers.length === 1) {
+    return { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_PALETTE[0] } } };
+  }
+  return {
+    multiSpeakerVoiceConfig: {
+      speakerVoiceConfigs: uniqueSpeakers.map((speaker, i) => ({
+        speaker,
+        voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_PALETTE[i % VOICE_PALETTE.length] } },
+      })),
+    },
+  };
 }
 
 // Multi-speaker TTS requires each turn tagged with which speaker delivers it
-// via speechMetadata.speaker on its own part, not just "Name: line" text.
-function buildContents(script) {
+// via speechMetadata.speaker on its own part. A single-voice request has no
+// speaker to disambiguate, so that tag is only added when there's more than
+// one unique speaker in the script.
+function buildContents(script, isMultiSpeaker) {
   return [
     {
       role: "user",
-      parts: script.map(({ speaker, line }) => ({ text: line, speechMetadata: { speaker } })),
+      parts: script.map(({ speaker, line }) =>
+        isMultiSpeaker ? { text: line, speechMetadata: { speaker } } : { text: line }
+      ),
     },
   ];
 }
@@ -80,16 +92,17 @@ function pcmToMp3(pcmBuffer, sampleRate) {
  */
 async function generateListeningAudioBuffer(script) {
   const uniqueSpeakers = [...new Set(script.map((turn) => turn.speaker))];
-  const speakerVoiceConfigs = buildSpeakerVoiceConfigs(uniqueSpeakers);
+  const speechConfig = buildSpeechConfig(uniqueSpeakers);
+  const isMultiSpeaker = uniqueSpeakers.length > 1;
 
   const res = await fetch(`${GEMINI_API_URL}?key=${process.env.GEMINI_API_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: buildContents(script),
+      contents: buildContents(script, isMultiSpeaker),
       generationConfig: {
         responseModalities: ["AUDIO"],
-        speechConfig: { multiSpeakerVoiceConfig: { speakerVoiceConfigs } },
+        speechConfig,
       },
     }),
   });

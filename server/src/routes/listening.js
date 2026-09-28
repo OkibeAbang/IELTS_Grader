@@ -3,7 +3,7 @@ import { getListeningSectionBank, getListeningSection } from "../listeningPassag
 import { scoreListeningAttempt, scoreListeningDrill } from "../scoreListening.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/listeningAttempts.js";
-import { listeningAudioExists, streamListeningAudio } from "../audioStorage.js";
+import { streamListeningAudio } from "../audioStorage.js";
 
 const router = express.Router();
 
@@ -23,12 +23,13 @@ router.get("/sections/:id/audio", async (req, res) => {
     if (!section) {
       return res.status(404).json({ error: "Section not found" });
     }
-    const exists = await listeningAudioExists(section.id);
-    if (!exists) {
+    // streamListeningAudio sets headers itself once it knows the file exists,
+    // so Content-Type is only set on the success path — setting it before
+    // knowing whether the file exists would need undoing on the 404 branch.
+    const streamed = await streamListeningAudio(section.id, req, res);
+    if (!streamed) {
       return res.status(404).json({ error: "Audio hasn't been generated for this section yet" });
     }
-    res.set("Content-Type", "audio/mpeg");
-    await streamListeningAudio(section.id, req, res);
   } catch (err) {
     console.error("Streaming listening audio failed:", err);
     if (!res.headersSent) res.status(502).json({ error: "Could not load this audio file." });

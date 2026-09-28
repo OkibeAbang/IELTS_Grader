@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 /**
  * Cloudflare R2 (S3-compatible object storage) when configured, falling back
@@ -127,31 +127,29 @@ async function saveListeningAudio(sectionId, mp3Buffer) {
   return key;
 }
 
-async function listeningAudioExists(sectionId) {
-  const key = listeningAudioKey(sectionId);
-  if (r2) {
-    try {
-      await r2.send(new HeadObjectCommand({ Bucket: R2_BUCKET, Key: key }));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  return fs.existsSync(localPathFor(key));
-}
-
 /**
  * Streams with HTTP Range support (206 Partial Content) — unlike the
  * attempt-audio streamers above, this backs a native <audio> element's
  * scrub bar, which needs Range/Content-Length to know the track's duration
- * and seek without downloading the whole file first.
+ * and seek without downloading the whole file first. Returns false (instead
+ * of throwing) when the section's audio hasn't been rendered yet, so the
+ * route can turn that into a clean 404 — this attempts the real read
+ * directly rather than doing a separate existence check first, which for
+ * R2 would mean two full network round-trips per audio load instead of one.
  */
 async function streamListeningAudio(sectionId, req, res) {
   const key = listeningAudioKey(sectionId);
   const range = req.headers.range;
 
   if (r2) {
-    const response = await r2.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key, Range: range }));
+    let response;
+    try {
+      response = await r2.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key, Range: range }));
+    } catch (err) {
+      if (err.name === "NoSuchKey") return false;
+      throw err;
+    }
+    res.set("Content-Type", "audio/mpeg");
     res.set("Accept-Ranges", "bytes");
     res.set("Content-Length", String(response.ContentLength));
     if (response.ContentRange) {
@@ -159,27 +157,52 @@ async function streamListeningAudio(sectionId, req, res) {
       res.set("Content-Range", response.ContentRange);
     }
     response.Body.pipe(res);
-    return;
+    return true;
   }
 
   const absPath = localPathFor(key);
-  const { size } = fs.statSync(absPath);
+  let size;
+  try {
+    ({ size } = fs.statSync(absPath));
+  } catch (err) {
+    if (err.code === "ENOENT") return false;
+    throw err;
+  }
+  res.set("Content-Type", "audio/mpeg");
   res.set("Accept-Ranges", "bytes");
 
   if (!range) {
     res.set("Content-Length", String(size));
     fs.createReadStream(absPath).pipe(res);
-    return;
+    return true;
   }
 
+  // Three valid forms per the HTTP spec: "bytes=A-B" (a range), "bytes=A-"
+  // (from A to the end), and "bytes=-N" (suffix range — the *last* N bytes,
+  // no start given at all). The naive version of this regex previously
+  // parsed "bytes=-500" as start=0 (falsy empty capture), which reads as
+  // "first 500 bytes" instead of "last 500 bytes" — the opposite of what
+  // it means.
   const match = /bytes=(\d*)-(\d*)/.exec(range);
-  const start = match?.[1] ? Number(match[1]) : 0;
-  const end = match?.[2] ? Number(match[2]) : size - 1;
+  const hasStart = !!match?.[1];
+  const hasEnd = !!match?.[2];
+  let start;
+  let end;
+  if (!hasStart && hasEnd) {
+    // Suffix range: "bytes=-500" = last 500 bytes.
+    const suffixLength = Math.min(Number(match[2]), size);
+    start = size - suffixLength;
+    end = size - 1;
+  } else {
+    start = hasStart ? Number(match[1]) : 0;
+    end = hasEnd ? Number(match[2]) : size - 1;
+  }
 
   res.status(206);
   res.set("Content-Range", `bytes ${start}-${end}/${size}`);
   res.set("Content-Length", String(end - start + 1));
   fs.createReadStream(absPath, { start, end }).pipe(res);
+  return true;
 }
 
 export {
@@ -189,6 +212,5 @@ export {
   saveSpeakingDrillAudio,
   deleteSpeakingDrillAudio,
   saveListeningAudio,
-  listeningAudioExists,
   streamListeningAudio,
 };

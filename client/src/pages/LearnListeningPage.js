@@ -83,7 +83,7 @@ export default function LearnListeningPage() {
 
       {section && questionType && !result && (
         <div className="listening-layout">
-          <AudioScriptPlayer sectionId={section.id} />
+          <AudioScriptPlayer key={section.id} sectionId={section.id} />
 
           <div className="reading-questions-col">
             {filteredQuestions.map((q, i) => (
