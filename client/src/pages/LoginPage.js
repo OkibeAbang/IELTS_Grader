@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth';
 import useDelayedNotice from '../hooks/useDelayedNotice';
+import PasswordInput from '../components/PasswordInput';
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
@@ -56,12 +57,7 @@ export default function LoginPage() {
         </label>
         <label>
           Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
 
         {error && <div className="error-banner">{error}</div>}

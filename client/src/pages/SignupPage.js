@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth';
 import useDelayedNotice from '../hooks/useDelayedNotice';
+import PasswordInput from '../components/PasswordInput';
 
 export default function SignupPage() {
   const { signup, loginWithGoogle } = useAuth();
@@ -53,8 +54,7 @@ export default function SignupPage() {
         </label>
         <label>
           Password
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}

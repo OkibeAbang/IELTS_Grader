@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminLogin } from '../api/admin';
+import PasswordInput from '../components/PasswordInput';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -41,8 +42,7 @@ export default function AdminLoginPage() {
           </label>
           <label>
             Password
-            <input
-              type="password"
+            <PasswordInput
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

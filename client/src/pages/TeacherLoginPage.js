@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { teacherLogin } from '../api/teacher';
+import PasswordInput from '../components/PasswordInput';
 
 export default function TeacherLoginPage() {
   const navigate = useNavigate();
@@ -42,8 +43,7 @@ export default function TeacherLoginPage() {
           </label>
           <label>
             Password
-            <input
-              type="password"
+            <PasswordInput
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

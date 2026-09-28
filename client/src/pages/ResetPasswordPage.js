@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import PasswordInput from '../components/PasswordInput';
 
 export default function ResetPasswordPage() {
   const { resetPassword } = useAuth();
@@ -44,8 +45,7 @@ export default function ResetPasswordPage() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <label>
           New password
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
