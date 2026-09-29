@@ -88,7 +88,7 @@ export default function ProfilePage() {
               {isPro ? 'PRO PLAN' : 'FREE PLAN'}
             </span>
           )}
-          <button type="button" className="btn-secondary" onClick={handleLogout}>
+          <button type="button" className="btn-danger" onClick={handleLogout}>
             <LogOut size={16} aria-hidden="true" /> Sign Out
           </button>
         </div>

@@ -78,8 +78,16 @@ function Sidebar() {
   const displayName = user?.displayName || user?.email?.split('@')[0];
   const avatarInitial = displayName ? displayName[0].toUpperCase() : '?';
 
+  const sidebarClassName = [
+    'sidebar',
+    collapsed && 'sidebar-collapsed',
+    !user && 'sidebar-guest',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <aside className={collapsed ? 'sidebar sidebar-collapsed' : 'sidebar'}>
+    <aside className={sidebarClassName}>
       <div className="sidebar-top-row">
         <Link to="/" className="sidebar-brand">9Band</Link>
         <button

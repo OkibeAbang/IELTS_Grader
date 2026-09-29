@@ -13,6 +13,8 @@
   --gold-pale: #faf0d6;
   --rust: #a54a2a;
   --rust-pale: #f6e3d8;
+  --danger: #c0392b;
+  --danger-pale: #fbe4e1;
   color-scheme: light;
 }
 
@@ -30,6 +32,8 @@
     --gold-pale: #3a2f16;
     --rust: #d97b54;
     --rust-pale: #3a2419;
+    --danger: #e0685a;
+    --danger-pale: #3a1f1c;
     color-scheme: dark;
   }
 }
@@ -423,6 +427,19 @@ h3 {
     display: none;
   }
 
+  /* Logged-out state: no Practice/Learn (both are protected routes that would
+     just redirect back to login anyway) and no login-arrow icon — just the
+     brand and theme toggle until the user actually signs in. */
+  .sidebar-guest .sidebar-nav,
+  .sidebar-guest .sidebar-account .sidebar-link {
+    display: none;
+  }
+
+  /* Sign out is only reachable from the Profile page on mobile, not the top nav. */
+  .top-nav-logout {
+    display: none;
+  }
+
   .main-content {
     padding: 24px 20px 56px;
   }
@@ -492,6 +509,29 @@ h3 {
 .btn-secondary:hover {
   border-color: var(--rust);
   color: var(--rust);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 7px;
+  background: var(--danger-pale);
+  color: var(--danger);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.12s ease;
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: var(--cream-deep);
 }
 
 .top-nav-logout {

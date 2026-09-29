@@ -30,10 +30,13 @@ function urgencyBucket(weeksUntilTest) {
 
 // Roughly one session per 45-60 minutes of weekly study time, clamped to a
 // realistic weekly range regardless of how much/little time was reported.
+// Floor is SKILLS.length, not an arbitrary small number — a plan that can't
+// afford at least one session per skill ends up recommending zero practice
+// of whichever skill loses the rounding, which isn't useful advice.
 function computeSessionsPerWeek(weeklyHours) {
-  if (!weeklyHours || weeklyHours <= 0) return 3;
+  if (!weeklyHours || weeklyHours <= 0) return SKILLS.length;
   const raw = Math.round((weeklyHours * 60) / 50);
-  return Math.min(10, Math.max(2, raw));
+  return Math.min(10, Math.max(SKILLS.length, raw));
 }
 
 function effectiveWeakestSkill(weakestSkill, currentBands) {
@@ -51,9 +54,12 @@ function allocateSessions(sessionsPerWeek, weakest) {
     return Object.fromEntries(SKILLS.map((s) => [s, each]));
   }
 
-  const weakestCount = Math.max(2, Math.round(sessionsPerWeek * 0.4));
-  const remaining = Math.max(0, sessionsPerWeek - weakestCount);
   const others = SKILLS.filter((s) => s !== weakest);
+  const weakestCount = Math.max(2, Math.round(sessionsPerWeek * 0.4));
+  // Guarantee every remaining skill gets at least one session: never let the
+  // "leftover after the weakest skill's share" dip below one-per-skill, even
+  // if that means the actual total slightly exceeds sessionsPerWeek.
+  const remaining = Math.max(others.length, sessionsPerWeek - weakestCount);
   const base = Math.floor(remaining / others.length);
   let extra = remaining - base * others.length;
 
