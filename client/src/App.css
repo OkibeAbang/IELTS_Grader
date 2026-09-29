@@ -491,7 +491,8 @@ h3 {
 /* ---- buttons ---- */
 
 .btn-secondary {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   align-self: flex-start;
   font-family: inherit;
   font-size: 0.85rem;
@@ -555,8 +556,8 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   font-size: 1rem;
   line-height: 1;
   padding: 0;
@@ -715,6 +716,29 @@ h3 {
   text-decoration: none;
 }
 
+.improvements a {
+  color: var(--green-deep);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.improvements a:hover {
+  text-decoration: underline;
+}
+
+.auth-field-hint {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--brown-text);
+}
+
+@media (max-width: 480px) {
+  .auth-form .submit-btn {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
 .auth-switch a:hover {
   text-decoration: underline;
 }
@@ -748,6 +772,16 @@ h3 {
   font-size: 0.95rem;
   max-width: 62ch;
   margin: 0;
+}
+
+.app-subtitle a {
+  color: var(--green-deep);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-subtitle a:hover {
+  text-decoration: underline;
 }
 
 .mode-tabs {
@@ -856,7 +890,7 @@ h3 {
   border: none;
   border-radius: 7px;
   background: var(--gold);
-  color: #fff;
+  color: #2b2620;
   cursor: pointer;
 }
 
@@ -945,7 +979,7 @@ h3 {
 
 .timer button:hover {
   background: var(--gold);
-  color: #fff;
+  color: #2b2620;
 }
 
 .timer-expired {
@@ -955,6 +989,11 @@ h3 {
 
 .word-count-row {
   font-size: 0.88rem;
+}
+
+.word-count-neutral {
+  color: var(--brown-text);
+  font-weight: 600;
 }
 
 .word-count-low {
@@ -1061,6 +1100,16 @@ h3 {
   color: var(--rust-pale);
 }
 
+/* .btn-secondary is inline-flex, so a bare Link would sit inline next to
+   whatever inline-level control follows it (e.g. the target-band picker
+   below) instead of always starting its own row. */
+.page-back-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
 .target-band-picker {
   display: inline-flex;
   align-items: center;
@@ -1163,7 +1212,8 @@ h3 {
 
 .band-badge {
   background: var(--gold);
-  color: #fff;
+  /* White-on-amber was ~2.94:1 (min is 3:1) — dark text clears 5.1:1. */
+  color: #2b2620;
   border-radius: 12px;
   padding: 2px 10px;
   font-weight: 700;
@@ -1464,6 +1514,13 @@ h3 {
   flex-wrap: wrap;
 }
 
+/* Decorative-only mock controls in the homepage preview card — spans, not
+   real buttons (nested inside a <Link>), so they can't use :disabled. */
+.recorder-mock-btn {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .audio-visualizer {
   display: flex;
   align-items: center;
@@ -1719,6 +1776,10 @@ h3 {
   color: var(--brown-text);
 }
 
+.dashboard-empty p {
+  margin: 0 0 16px;
+}
+
 /* ---- band trend chart ---- */
 
 .band-trend-chart {
@@ -1878,9 +1939,19 @@ h3 {
 
 .hub-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* Fixed 2 columns, not auto-fit — auto-fit computed 3 columns at typical
+     desktop widths, stranding the last card alone on its own row whenever a
+     section had 4 or 5 items (Practice's Drill section, Learn's study plan
+     grid) instead of a clean multiple of 3. */
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-top: 8px;
+}
+
+@media (max-width: 560px) {
+  .hub-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .hub-card {
@@ -2352,6 +2423,9 @@ a.hub-card:hover {
 }
 
 .marketing-nav-login {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--brown-deep);
   text-decoration: none;
   font-weight: 600;
@@ -2360,6 +2434,23 @@ a.hub-card:hover {
 
 .marketing-nav-login:hover {
   color: var(--green-deep);
+}
+
+.marketing-nav-links-mobile-actions {
+  display: none;
+}
+
+.marketing-nav-menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--brown-line);
+  border-radius: 8px;
+  background: var(--cream-deep);
+  color: var(--brown-deep);
+  cursor: pointer;
 }
 
 .marketing-hero {
@@ -2392,6 +2483,7 @@ a.hub-card:hover {
   line-height: 1.08;
   letter-spacing: -0.02em;
   max-width: 14ch;
+  text-wrap: balance;
 }
 
 .marketing-hero-subtitle {
@@ -2479,7 +2571,11 @@ a.hub-card:hover {
 .hero-mock-band-score {
   font-size: 2.4rem;
   font-weight: 700;
-  color: var(--gold-pale);
+  /* Fixed, not a theme token: the badge's green background doesn't change
+     between themes, but --gold-pale does (it's tuned as a light backdrop
+     tint elsewhere, which flips dark in dark mode) — that flip left this
+     text at ~2.1:1 contrast against the green in dark mode. */
+  color: #faf0d6;
   line-height: 1.1;
 }
 
@@ -2500,7 +2596,9 @@ a.hub-card:hover {
 
 .hero-mock-badge {
   background: var(--gold);
-  color: #fff;
+  /* White-on-amber was ~2.9:1 (min is 3:1) in both themes — dark text on
+     the same amber comfortably clears it. */
+  color: #2b2620;
   border-radius: 10px;
   padding: 2px 9px;
   font-weight: 700;
@@ -2598,6 +2696,21 @@ a.hub-card:hover {
   opacity: 1;
 }
 
+/* Touch devices have no hover, so the full-card scrim would never appear —
+   show a small persistent "Try it yourself" pill instead of hiding the
+   affordance entirely. */
+@media (hover: none) {
+  .preview-mockup-overlay {
+    opacity: 1;
+    inset: auto 16px 16px auto;
+    background: var(--green-deep);
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    border-radius: 999px;
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.4);
+  }
+}
+
 .preview-mock-passage {
   font-size: 0.85rem;
   color: var(--brown-text);
@@ -2630,16 +2743,62 @@ a.hub-card:hover {
   padding: 0 32px 96px;
 }
 
+.marketing-how-it-works {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 32px 96px;
+}
+
+.how-it-works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.how-it-works-item {
+  padding: 24px;
+  border: 1px solid var(--brown-line);
+  border-radius: 12px;
+  background: var(--cream-deep);
+}
+
+.how-it-works-item h3 {
+  margin: 0 0 8px;
+  font-size: 1.02rem;
+}
+
+.how-it-works-item p {
+  margin: 0;
+  color: var(--brown-text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 .marketing-section-title {
   font-size: 1.5rem;
   margin-bottom: 24px;
   text-align: center;
 }
 
+.marketing-tools-subtitle {
+  text-align: center;
+  color: var(--brown-text);
+  margin: -12px 0 28px;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .marketing-tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+}
+
+@media (max-width: 560px) {
+  .marketing-tools-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .marketing-tool-card {
@@ -2697,6 +2856,29 @@ a.hub-card:hover {
   text-decoration: underline;
 }
 
+.not-found-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 96px 20px;
+  color: var(--brown-deep);
+}
+
+.not-found-code {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--brown-text);
+  margin: 0;
+}
+
+.not-found-page p {
+  color: var(--brown-text);
+  margin: 0 0 12px;
+}
+
 .legal-page {
   max-width: 760px;
   margin: 0 auto;
@@ -2729,10 +2911,53 @@ a.hub-card:hover {
     gap: 12px;
   }
 
+  .marketing-nav-menu-toggle {
+    display: flex;
+  }
+
+  /* On mobile, the link row becomes a dropdown panel toggled by the
+     hamburger button instead of a cramped inline row (or, previously,
+     nothing at all — it was just hidden with no replacement). */
   .marketing-nav-links {
-    /* These duplicate the Tools grid a scroll away — on mobile they just
-       crowd the header next to the primary CTA, so drop them rather than
-       force-wrap four links into a cramped corner. */
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 20px 20px;
+    background: var(--cream-deep);
+    border-bottom: 1px solid var(--brown-line);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.25);
+  }
+
+  .marketing-nav-links-open {
+    display: flex;
+  }
+
+  .marketing-nav-links a {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--brown-line);
+  }
+
+  .marketing-nav-links-mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .marketing-nav-links-mobile-actions .submit-btn {
+    text-align: center;
+  }
+
+  .marketing-nav-inner {
+    position: relative;
+  }
+
+  .marketing-nav-guest-cta {
     display: none;
   }
 
@@ -2747,7 +2972,28 @@ a.hub-card:hover {
     max-width: none;
   }
 
+  /* .marketing-hero-visual's 340px flex-basis is meant as a min-width for
+     the desktop side-by-side row layout — in the mobile column layout it
+     applies to height instead, stretching the card ~100px past its actual
+     content height. Let it size to content instead. */
+  .marketing-hero-visual {
+    flex: none;
+    width: 100%;
+  }
+
   .marketing-tools {
     padding: 0 20px 64px;
+  }
+
+  /* Four tabs wrapped to 3+1 on narrow screens (e.g. "Speaking" alone on
+     its own row) — scroll sideways in one row instead. */
+  .marketing-preview-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .marketing-preview-tabs .mode-tab {
+    flex-shrink: 0;
   }
 }

@@ -5,8 +5,10 @@ import EssayForm from '../components/EssayForm';
 import ResultsView from '../components/ResultsView';
 import { gradeEssay } from '../api/writing';
 import usePersistedState from '../hooks/usePersistedState';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function EssayGraderPage() {
+  useDocumentTitle('Essay Grading');
   const [result, setResult] = usePersistedState('essay-grader:result', null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);

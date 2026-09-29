@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchListeningSection, submitListeningAttempt } from '../api/listening';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import SectionPicker from '../components/listening/SectionPicker';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
@@ -11,6 +12,7 @@ import ListeningResultsView from '../components/ListeningResultsView';
 const KEYS = ['listening-practice:step', 'listening-practice:sectionId', 'listening-practice:answers', 'listening-practice:result'];
 
 export default function ListeningPracticePage() {
+  useDocumentTitle('Listening Practice');
   const [step, setStep] = usePersistedState('listening-practice:step', 'pick');
   const [sectionId, setSectionId] = usePersistedState('listening-practice:sectionId', null);
   const [section, setSection] = useState(null);
@@ -70,9 +72,16 @@ export default function ListeningPracticePage() {
         </p>
       </header>
 
-      <Link to="/practice" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
-      </Link>
+      <div className="page-back-row">
+        <Link to="/practice" className="btn-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
+        </Link>
+        {section && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
+            Choose a different section
+          </button>
+        )}
+      </div>
 
       {loadError && <div className="error-banner">{loadError}</div>}
 
@@ -101,12 +110,6 @@ export default function ListeningPracticePage() {
 
       {submitError && <div className="error-banner">{submitError}</div>}
       {result && <ListeningResultsView result={result} />}
-
-      {section && (
-        <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-          Choose a different section
-        </button>
-      )}
     </div>
   );
 }

@@ -1,4 +1,7 @@
+import useDocumentTitle from '../hooks/useDocumentTitle';
+
 export default function TermsOfServicePage() {
+  useDocumentTitle('Terms of Service');
   return (
     <div className="legal-page">
       <header className="app-header">

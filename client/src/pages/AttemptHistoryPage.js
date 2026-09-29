@@ -10,6 +10,7 @@ import { fetchReadingHistory, deleteReadingAttempt } from '../api/reading';
 import { fetchListeningHistory, deleteListeningAttempt } from '../api/listening';
 import { fetchFullTestHistory, deleteFullTestAttempt } from '../api/fullTest';
 import AttemptSection from '../components/AttemptSection';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const SECTION_LABELS = {
   introduction: 'Introduction',
@@ -35,6 +36,7 @@ function modeLabel(attempt) {
 }
 
 export default function AttemptHistoryPage() {
+  useDocumentTitle('Dashboard');
   const [attempts, setAttempts] = useState(null);
   const [error, setError] = useState(null);
   const [essayAttempts, setEssayAttempts] = useState(null);
@@ -137,21 +139,11 @@ export default function AttemptHistoryPage() {
       </header>
 
       <AttemptSection
-        title="Speaking Practice"
-        attempts={attempts}
-        error={error}
-        emptyMessage="No attempts yet. Complete a speaking practice session to see your progress here."
-        historyBasePath="/speaking/history"
-        onDelete={handleDelete}
-        chartLabelKey="topicLabel"
-        columns={[{ header: 'Topic', render: (a) => a.topicLabel }]}
-      />
-
-      <AttemptSection
         title="Essay Grading"
         attempts={essayAttempts}
         error={essayError}
         emptyMessage="No essay attempts yet. Grade an essay or practice a section to see your progress here."
+        emptyCta={{ to: '/essay-grader', label: 'Grade an essay' }}
         historyBasePath="/essay-grader/history"
         onDelete={handleEssayDelete}
         showChart={false}
@@ -170,6 +162,7 @@ export default function AttemptHistoryPage() {
         statsAttempts={readingAttempts?.filter((a) => a.mode !== 'drill')}
         error={readingError}
         emptyMessage="No reading attempts yet. Complete a passage to see your progress here."
+        emptyCta={{ to: '/reading', label: 'Start reading practice' }}
         historyBasePath="/reading/history"
         onDelete={handleReadingDelete}
         chartLabelKey="passageTitle"
@@ -186,6 +179,7 @@ export default function AttemptHistoryPage() {
         statsAttempts={listeningAttempts?.filter((a) => a.mode !== 'drill')}
         error={listeningError}
         emptyMessage="No listening attempts yet. Complete a section to see your progress here."
+        emptyCta={{ to: '/listening', label: 'Start listening practice' }}
         historyBasePath="/listening/history"
         onDelete={handleListeningDelete}
         chartLabelKey="sectionTitle"
@@ -197,10 +191,23 @@ export default function AttemptHistoryPage() {
       />
 
       <AttemptSection
+        title="Speaking Practice"
+        attempts={attempts}
+        error={error}
+        emptyMessage="No attempts yet. Complete a speaking practice session to see your progress here."
+        emptyCta={{ to: '/speaking', label: 'Start speaking practice' }}
+        historyBasePath="/speaking/history"
+        onDelete={handleDelete}
+        chartLabelKey="topicLabel"
+        columns={[{ header: 'Topic', render: (a) => a.topicLabel }]}
+      />
+
+      <AttemptSection
         title="Speaking Drills"
         attempts={speakingDrillAttempts}
         error={speakingDrillError}
         emptyMessage="No speaking drills yet. Practice a single part in Learn to see your progress here."
+        emptyCta={{ to: '/practice/drills/speaking', label: 'Try a speaking drill' }}
         historyBasePath="/speaking/drill-history"
         onDelete={handleSpeakingDrillDelete}
         chartLabelKey="topicLabel"
@@ -215,6 +222,7 @@ export default function AttemptHistoryPage() {
         attempts={completedFullTests}
         error={fullTestError}
         emptyMessage="No full tests completed yet. Take a full timed test to see your progress here."
+        emptyCta={{ to: '/full-test', label: 'Start Full Test' }}
         historyBasePath="/full-test/history"
         onDelete={handleFullTestDelete}
         showChart={false}

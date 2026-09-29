@@ -3,21 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { createCheckoutSession } from '../api/billing';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const FREE_FEATURES = [
   { text: 'Unlimited practice attempts across Writing, Reading, Listening, and Speaking' },
   { text: 'Overall band score on every graded attempt' },
   { text: 'Full attempt history and progress dashboard' },
+  { text: 'Full-length timed placement test across all 4 skills' },
 ];
 
 const PRO_FEATURES = [
   { text: 'Everything in Free' },
   { text: 'Detailed criteria breakdown, corrections, and improvement suggestions on every result' },
-  { text: 'Full-length timed placement test', soon: true },
-  { text: 'Personalized study plan', soon: true },
+  { text: 'Personalized study plan' },
 ];
 
 export default function PricingPage() {
+  useDocumentTitle('Pricing');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState('monthly');

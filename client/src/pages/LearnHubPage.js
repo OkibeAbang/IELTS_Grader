@@ -6,8 +6,10 @@ import { fetchStudyPlan, generateStudyPlan } from '../api/studyPlan';
 import { PAYWALL_ENABLED } from '../config/paywall';
 import OnboardingQuestionnaire from '../components/OnboardingQuestionnaire';
 import StudyPlanView from '../components/StudyPlanView';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 export default function LearnHubPage() {
+  useDocumentTitle('Learn');
   const { user } = useAuth();
   const isPro = !PAYWALL_ENABLED || user?.subscriptionTier === 'pro';
 

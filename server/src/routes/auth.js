@@ -172,6 +172,41 @@ router.patch("/me", requireAuth, async (req, res) => {
   }
 });
 
+router.post("/change-password", requireAuth, authLimiter, async (req, res) => {
+  const { currentPassword, newPassword } = req.body ?? {};
+
+  if (typeof currentPassword !== "string" || !currentPassword) {
+    return res.status(400).json({ error: "Current password is required" });
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ error: "New password must be at least 8 characters" });
+  }
+
+  try {
+    // findById deliberately excludes password_hash (PUBLIC_FIELDS) since it's
+    // used in public-facing contexts like /session — findByEmail selects
+    // everything, same as /login does to verify a password.
+    const user = await findByEmail(req.user.email);
+    if (!user || !user.password_hash) {
+      return res
+        .status(400)
+        .json({ error: "This account signed up with Google and has no password to change." });
+    }
+
+    const valid = await verifyPassword(currentPassword, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await resetPassword(user.id, passwordHash);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Changing password failed:", err);
+    res.status(502).json({ error: "Could not change your password. Please try again." });
+  }
+});
+
 router.get("/session", async (req, res) => {
   const token = req.cookies?.[SESSION_COOKIE_NAME];
   if (!token) {

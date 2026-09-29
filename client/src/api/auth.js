@@ -67,3 +67,10 @@ export async function resetPassword({ token, password }) {
   });
   return data.user;
 }
+
+export async function changePassword({ currentPassword, newPassword }) {
+  return requestJson('/api/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}

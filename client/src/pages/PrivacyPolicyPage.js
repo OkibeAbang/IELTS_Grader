@@ -1,4 +1,7 @@
+import useDocumentTitle from '../hooks/useDocumentTitle';
+
 export default function PrivacyPolicyPage() {
+  useDocumentTitle('Privacy Policy');
   return (
     <div className="legal-page">
       <header className="app-header">

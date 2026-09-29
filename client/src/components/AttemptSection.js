@@ -12,6 +12,7 @@ export default function AttemptSection({
   statsAttempts,
   error,
   emptyMessage,
+  emptyCta,
   historyBasePath,
   onDelete,
   columns,
@@ -39,7 +40,16 @@ export default function AttemptSection({
 
       {error && <div className="error-banner">{error}</div>}
 
-      {attempts && attempts.length === 0 && <div className="dashboard-empty">{emptyMessage}</div>}
+      {attempts && attempts.length === 0 && (
+        <div className="dashboard-empty">
+          <p>{emptyMessage}</p>
+          {emptyCta && (
+            <Link to={emptyCta.to} className="btn-secondary">
+              {emptyCta.label}
+            </Link>
+          )}
+        </div>
+      )}
 
       {hasStatsAttempts && (
         <div className="dashboard-stats">

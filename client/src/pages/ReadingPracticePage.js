@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { fetchReadingPassage, submitReadingAttempt } from '../api/reading';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import PassagePicker from '../components/reading/PassagePicker';
 import PassageViewer from '../components/reading/PassageViewer';
 import ReadingResultsView from '../components/ReadingResultsView';
@@ -17,6 +18,7 @@ const KEYS = [
 ];
 
 export default function ReadingPracticePage() {
+  useDocumentTitle('Reading Practice');
   const [step, setStep] = usePersistedState('reading-practice:step', 'pick');
   const [passageId, setPassageId] = usePersistedState('reading-practice:passageId', null);
   const [passage, setPassage] = useState(null);
@@ -76,9 +78,16 @@ export default function ReadingPracticePage() {
         </p>
       </header>
 
-      <Link to="/practice" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
-      </Link>
+      <div className="page-back-row">
+        <Link to="/practice" className="btn-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
+        </Link>
+        {passage && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
+            Choose a different passage
+          </button>
+        )}
+      </div>
 
       {loadError && <div className="error-banner">{loadError}</div>}
 
@@ -97,12 +106,6 @@ export default function ReadingPracticePage() {
 
       {submitError && <div className="error-banner">{submitError}</div>}
       {result && <ReadingResultsView result={result} />}
-
-      {passage && (
-        <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-          Choose a different passage
-        </button>
-      )}
     </div>
   );
 }

@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Pencil, CreditCard, Timer } from 'lucide-react';
+import { LogOut, Pencil, CreditCard, Timer, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { PAYWALL_ENABLED } from '../config/paywall';
 import { fetchMyClasses, joinClass } from '../api/classes';
+import { changePassword } from '../api/auth';
+import useDocumentTitle from '../hooks/useDocumentTitle';
+import PasswordInput from '../components/PasswordInput';
 
 export default function ProfilePage() {
+  useDocumentTitle('Profile Settings');
   const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -17,6 +21,13 @@ export default function ProfilePage() {
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState(null);
+
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   useEffect(() => {
     fetchMyClasses().then(setClasses).catch(() => setClasses([]));
@@ -68,6 +79,36 @@ export default function ProfilePage() {
       setSaveError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  function startChangingPassword() {
+    setCurrentPassword('');
+    setNewPassword('');
+    setPasswordError(null);
+    setPasswordSuccess(false);
+    setChangingPassword(true);
+  }
+
+  function cancelChangingPassword() {
+    setChangingPassword(false);
+    setPasswordError(null);
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPasswordSaving(true);
+    setPasswordError(null);
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setChangingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setPasswordSuccess(true);
+    } catch (err) {
+      setPasswordError(err.message);
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -145,6 +186,65 @@ export default function ProfilePage() {
           </section>
 
           <section className="profile-section">
+            <div className="profile-section-header">
+              <h2>Password</h2>
+              {!changingPassword && (
+                <button type="button" className="btn-secondary" onClick={startChangingPassword}>
+                  <Pencil size={14} aria-hidden="true" /> Change
+                </button>
+              )}
+            </div>
+
+            {passwordError && <div className="error-banner">{passwordError}</div>}
+            {passwordSuccess && !changingPassword && (
+              <div className="success-banner">Your password was updated.</div>
+            )}
+
+            {changingPassword ? (
+              <form className="auth-form" onSubmit={handleChangePassword}>
+                <label>
+                  Current password
+                  <PasswordInput
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                </label>
+                <label>
+                  New password
+                  <PasswordInput
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                  />
+                  <span className="auth-field-hint">At least 8 characters</span>
+                </label>
+                <div className="profile-edit-actions">
+                  <button type="submit" className="submit-btn" disabled={passwordSaving}>
+                    {passwordSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={cancelChangingPassword}
+                    disabled={passwordSaving}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="profile-info-row">
+                <span className="profile-info-label">Password</span>
+                <span className="profile-info-value">••••••••</span>
+              </div>
+            )}
+          </section>
+
+          <section className="profile-section">
             <h2>Class</h2>
             {classes === null ? (
               <p className="auth-loading">Loading…</p>
@@ -201,6 +301,9 @@ export default function ProfilePage() {
               )}
               <Link to="/full-test" className="btn-secondary">
                 <Timer size={16} aria-hidden="true" /> Start Full Test
+              </Link>
+              <Link to="/speaking/history" className="btn-secondary">
+                <LayoutDashboard size={16} aria-hidden="true" /> View Dashboard
               </Link>
             </div>
           </section>

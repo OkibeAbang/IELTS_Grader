@@ -12,6 +12,7 @@ import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
 import PassageViewer from '../components/reading/PassageViewer';
 import FullTestEssayStep from '../components/FullTestEssayStep';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import Part1Conversation from '../components/speaking/Part1Conversation';
 import CueCardPart2 from '../components/speaking/CueCardPart2';
 import PartRecorder from '../components/speaking/PartRecorder';
@@ -178,6 +179,7 @@ function SpeakingSteps({ topicId, step, setStep, onFinalSubmit, submitting }) {
 }
 
 export default function FullTestPage() {
+  useDocumentTitle('Full Test');
   const [step, setStep] = usePersistedState('full-test:step', 'intro');
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState(null);

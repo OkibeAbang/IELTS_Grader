@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LayoutGrid, GraduationCap, BarChart3, CreditCard, LogOut, LogIn, PanelLeft } from 'lucide-react';
@@ -10,15 +10,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import TeacherProtectedRoute from './components/TeacherProtectedRoute';
 import ThemeToggle from './components/ThemeToggle';
+import LoadingScreen from './components/LoadingScreen';
 import OverviewPage from './pages/OverviewPage';
-import AdminLoginPage from './pages/AdminLoginPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import AdminAttemptDetailPage from './pages/AdminAttemptDetailPage';
-import TeacherLoginPage from './pages/TeacherLoginPage';
-import TeacherDashboardPage from './pages/TeacherDashboardPage';
-import TeacherClassDetailPage from './pages/TeacherClassDetailPage';
-import TeacherStudentDetailPage from './pages/TeacherStudentDetailPage';
-import TeacherAttemptReviewPage from './pages/TeacherAttemptReviewPage';
 import PracticeHubPage from './pages/PracticeHubPage';
 import LearnHubPage from './pages/LearnHubPage';
 import PricingPage from './pages/PricingPage';
@@ -47,7 +40,20 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import SpeakingPracticePage from './pages/SpeakingPracticePage';
 import AttemptHistoryPage from './pages/AttemptHistoryPage';
 import AttemptDetailPage from './pages/AttemptDetailPage';
+import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
+
+// Admin/Teacher pages are a large chunk of code a typical student visitor
+// never needs — split into their own lazy-loaded bundles instead of
+// shipping them in the main JS everyone downloads on first load.
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const AdminAttemptDetailPage = lazy(() => import('./pages/AdminAttemptDetailPage'));
+const TeacherLoginPage = lazy(() => import('./pages/TeacherLoginPage'));
+const TeacherDashboardPage = lazy(() => import('./pages/TeacherDashboardPage'));
+const TeacherClassDetailPage = lazy(() => import('./pages/TeacherClassDetailPage'));
+const TeacherStudentDetailPage = lazy(() => import('./pages/TeacherStudentDetailPage'));
+const TeacherAttemptReviewPage = lazy(() => import('./pages/TeacherAttemptReviewPage'));
 
 const SIDEBAR_COLLAPSED_KEY = 'ielts-grader-sidebar-collapsed';
 
@@ -177,6 +183,7 @@ function AppLayout() {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<LoadingScreen />}>
     <Routes>
       <Route path="/" element={<OverviewPage />} />
       <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -415,7 +422,9 @@ function AppRoutes() {
           }
         />
       </Route>
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
   );
 }
 

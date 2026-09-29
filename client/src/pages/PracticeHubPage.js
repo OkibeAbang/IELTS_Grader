@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { PenLine, BookOpen, Headphones, Mic, Timer } from 'lucide-react';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const PRACTICE_ITEMS = [
   {
@@ -67,6 +68,7 @@ const DRILL_ITEMS = [
 ];
 
 export default function PracticeHubPage() {
+  useDocumentTitle('Practice');
   return (
     <div>
       <header className="app-header">

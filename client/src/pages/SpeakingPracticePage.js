@@ -5,6 +5,7 @@ import { fetchSpeakingTopic, submitSpeakingAttempt, fetchLiveVoiceStatus } from 
 import { useAuth } from '../hooks/useAuth';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import useDelayedNotice from '../hooks/useDelayedNotice';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
 import LiveSpeakingSession from '../components/speaking/LiveSpeakingSession';
@@ -24,6 +25,7 @@ const KEYS = [
 ];
 
 export default function SpeakingPracticePage() {
+  useDocumentTitle('Speaking Practice');
   const { user, resendVerification } = useAuth();
   const [topicId, setTopicId] = usePersistedState('speaking-practice:topicId', null);
   const [topic, setTopic] = useState(null);
@@ -135,9 +137,16 @@ export default function SpeakingPracticePage() {
         </p>
       </header>
 
-      <Link to="/practice" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
-      </Link>
+      <div className="page-back-row">
+        <Link to="/practice" className="btn-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
+        </Link>
+        {topic && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
+            Choose a different topic
+          </button>
+        )}
+      </div>
 
       {user && !user.emailVerified && (
         <div className="precheck-warning">
@@ -233,12 +242,6 @@ export default function SpeakingPracticePage() {
       )}
 
       {result && <SpeakingResultsView result={result} />}
-
-      {topic && (
-        <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-          Choose a different topic
-        </button>
-      )}
     </div>
   );
 }

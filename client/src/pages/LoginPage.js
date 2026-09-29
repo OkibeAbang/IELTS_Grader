@@ -3,7 +3,9 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth';
 import useDelayedNotice from '../hooks/useDelayedNotice';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import PasswordInput from '../components/PasswordInput';
+import { toolRedirectLabel } from '../config/toolRedirects';
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
@@ -16,6 +18,9 @@ export default function LoginPage() {
   const showColdStartHint = useDelayedNotice(submitting);
 
   const redirectTo = location.state?.from ?? '/practice';
+  const toolLabel = toolRedirectLabel(redirectTo);
+  const heading = toolLabel ? `Log in to ${toolLabel}` : 'Log in';
+  useDocumentTitle(heading);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -43,13 +48,14 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
-      <h1>Log in</h1>
+      <h1>{heading}</h1>
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <label>
           Email
           <input
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -57,7 +63,12 @@ export default function LoginPage() {
         </label>
         <label>
           Password
-          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <PasswordInput
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
         </label>
 
         {error && <div className="error-banner">{error}</div>}
@@ -85,19 +96,10 @@ export default function LoginPage() {
       )}
 
       <p className="auth-switch">
-        Don't have an account? <Link to="/signup">Sign up</Link>
+        Don't have an account? <Link to="/signup" state={location.state}>Sign up</Link>
       </p>
       <p className="auth-switch">
         <Link to="/forgot-password">Forgot password?</Link>
-      </p>
-      <p className="auth-switch auth-switch-row">
-        <span>
-          Teacher? <Link to="/teacher/login">Log in here</Link>
-        </span>
-        <span className="auth-switch-sep" aria-hidden="true">&middot;</span>
-        <span>
-          Admin? <Link to="/admin/login">Log in here</Link>
-        </span>
       </p>
     </div>
   );

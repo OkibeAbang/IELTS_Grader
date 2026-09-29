@@ -52,7 +52,11 @@ export default function FullTestEssayStep({ persistKey, taskType, taskLabel, pro
       </label>
 
       <div className="word-count-row">
-        <span className={wordCount < minWords ? 'word-count-low' : 'word-count-ok'}>
+        <span
+          className={
+            wordCount === 0 ? 'word-count-neutral' : wordCount < minWords ? 'word-count-low' : 'word-count-ok'
+          }
+        >
           {wordCount} words (minimum {minWords})
         </span>
       </div>
