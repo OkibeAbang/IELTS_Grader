@@ -71,9 +71,16 @@ export default function LearnReadingPage() {
         </p>
       </header>
 
-      <Link to="/practice" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
-      </Link>
+      <div className="page-back-row">
+        <Link to="/practice#drill-mode" className="btn-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to Drill Mode
+        </Link>
+        {questionType && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
+            Choose a different question type
+          </button>
+        )}
+      </div>
 
       {loadError && <div className="error-banner">{loadError}</div>}
 
@@ -95,12 +102,6 @@ export default function LearnReadingPage() {
 
       {submitError && <div className="error-banner">{submitError}</div>}
       {result && <ReadingResultsView result={result} />}
-
-      {questionType && (
-        <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-          Choose a different question type
-        </button>
-      )}
     </div>
   );
 }

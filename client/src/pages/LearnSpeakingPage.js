@@ -72,9 +72,16 @@ export default function LearnSpeakingPage() {
         </p>
       </header>
 
-      <Link to="/practice" className="btn-secondary">
-        <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
-      </Link>
+      <div className="page-back-row">
+        <Link to="/practice#drill-mode" className="btn-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to Drill Mode
+        </Link>
+        {topicId && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
+            Choose a different topic
+          </button>
+        )}
+      </div>
 
       {user && !user.emailVerified && (
         <div className="precheck-warning">
@@ -116,12 +123,6 @@ export default function LearnSpeakingPage() {
       )}
       {submitError && <div className="error-banner">{submitError}</div>}
       {result && <SpeakingSectionResultsView result={result} />}
-
-      {topicId && (
-        <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-          Choose a different topic
-        </button>
-      )}
     </div>
   );
 }

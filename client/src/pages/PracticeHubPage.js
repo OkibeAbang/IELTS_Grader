@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { PenLine, BookOpen, Headphones, Mic, Timer } from 'lucide-react';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 
@@ -69,6 +70,17 @@ const DRILL_ITEMS = [
 
 export default function PracticeHubPage() {
   useDocumentTitle('Practice');
+  const location = useLocation();
+
+  // Plain BrowserRouter (not a data router), so there's no built-in scroll
+  // restoration for hash links — "Back to Drill Mode" from a drill page
+  // links here with #drill-mode, and this scrolls to it manually on mount.
+  useEffect(() => {
+    if (location.hash === '#drill-mode') {
+      document.getElementById('drill-mode')?.scrollIntoView({ block: 'start' });
+    }
+  }, [location.hash]);
+
   return (
     <div>
       <header className="app-header">
@@ -89,7 +101,7 @@ export default function PracticeHubPage() {
         ))}
       </div>
 
-      <h2>Drill mode</h2>
+      <h2 id="drill-mode">Drill mode</h2>
       <p className="app-subtitle">
         Practice one task type at a time with instant feedback — a shorter, more focused
         alternative to a full timed test.

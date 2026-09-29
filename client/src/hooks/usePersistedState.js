@@ -46,6 +46,15 @@ export default function usePersistedState(key, fallback) {
   return [value, setPersistedValue];
 }
 
+// Non-hook accessor for reading a persisted value at call time (e.g. inside
+// an event handler) rather than at the calling component's mount time —
+// a `usePersistedState` call only reads its initial value once (React's
+// lazy useState initializer), so a component that mounts before the value
+// is written elsewhere would otherwise be stuck with a stale snapshot.
+export function getPersistedValue(key, fallback) {
+  return readInitial(key, fallback);
+}
+
 export function clearPersistedState(key) {
   memoryStore.delete(key);
   try {

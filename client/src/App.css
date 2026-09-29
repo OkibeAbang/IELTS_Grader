@@ -1246,6 +1246,15 @@ h3 {
   padding: 18px;
 }
 
+/* Scoped to the Learn page's layout specifically (hub-grid directly followed
+   by the Checkpoints box, then a bare Retake button) rather than a blanket
+   margin on .improvements — that class is shared with several results-view
+   pages that already space their children via flex `gap`, where an added
+   margin here would double up. */
+.hub-grid + .improvements {
+  margin: 24px 0;
+}
+
 .improvements h3,
 .next-band-gap h3 {
   color: var(--green-deep);

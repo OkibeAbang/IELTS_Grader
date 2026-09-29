@@ -6,7 +6,7 @@ import { fetchListeningSection, submitListeningAttempt, fetchListeningAttemptDet
 import { fetchReadingPassage, submitReadingAttempt, fetchReadingAttemptDetail } from '../api/reading';
 import { gradeEssay, fetchEssayAttemptDetail } from '../api/writing';
 import { fetchSpeakingTopic, submitSpeakingAttempt, fetchAttemptDetail } from '../api/speaking';
-import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import usePersistedState, { clearPersistedState, getPersistedValue } from '../hooks/usePersistedState';
 import usePersistedCountdown, { formatCountdown } from '../hooks/usePersistedCountdown';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
@@ -30,6 +30,7 @@ const FULL_TEST_KEYS = [
   'full-test:readingAttemptId',
   'full-test:writingTask1AttemptId',
   'full-test:writingTask2AttemptId',
+  'full-test:speakingAttemptId',
   'full-test:resultsData',
   'full-test-listening:answers',
   'full-test-listening:timer',
@@ -193,6 +194,7 @@ export default function FullTestPage() {
   const [readingAttemptId, setReadingAttemptId] = usePersistedState('full-test:readingAttemptId', null);
   const [writingTask1AttemptId, setWritingTask1AttemptId] = usePersistedState('full-test:writingTask1AttemptId', null);
   const [writingTask2AttemptId, setWritingTask2AttemptId] = usePersistedState('full-test:writingTask2AttemptId', null);
+  const [speakingAttemptId, setSpeakingAttemptId] = usePersistedState('full-test:speakingAttemptId', null);
 
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState(null);
@@ -242,56 +244,86 @@ export default function FullTestPage() {
     }
   }
 
-  async function handleTask1Submit(essay) {
-    setSectionSubmitting(true);
-    setSectionError(null);
-    try {
-      const data = await gradeEssay({ essay, prompt: assignment.writingTask1Prompt.text, taskType: 'task1' });
-      setWritingTask1AttemptId(data.attemptId);
-      setStep('writing-task2');
-    } catch (err) {
-      setSectionError(err.message);
-    } finally {
-      setSectionSubmitting(false);
-    }
+  // Essay text is already persisted (FullTestEssayStep saves it on every
+  // keystroke under this same key) — grading itself is deferred, so this
+  // just advances to the next section, instantly, with nothing to fail.
+  function handleTask1Submit() {
+    setStep('writing-task2');
   }
 
-  async function handleTask2Submit(essay) {
-    setSectionSubmitting(true);
-    setSectionError(null);
-    try {
-      const data = await gradeEssay({ essay, prompt: assignment.writingTask2Prompt.text, taskType: 'task2' });
-      setWritingTask2AttemptId(data.attemptId);
-      setStep('speaking-part1');
-    } catch (err) {
-      setSectionError(err.message);
-    } finally {
-      setSectionSubmitting(false);
-    }
+  function handleTask2Submit() {
+    setStep('speaking-part1');
   }
 
   async function handleSpeakingSubmit(topicId, recordings) {
     setSectionSubmitting(true);
     setSectionError(null);
+
+    let task1Id = writingTask1AttemptId;
+    let task2Id = writingTask2AttemptId;
+    let speakingId = speakingAttemptId;
+
+    // Read fresh at submit time, not at FullTestPage's mount time — this
+    // component mounts before either essay is written, so a usePersistedState
+    // snapshot taken at the top of the component would be stuck on the
+    // initial empty string for the entire test.
+    const task1Essay = getPersistedValue('full-test-writing-task1:essay', '');
+    const task2Essay = getPersistedValue('full-test-writing-task2:essay', '');
+
     try {
-      const data = await submitSpeakingAttempt({ topicId, recordings });
-      const speakingAttemptId = data.attemptId;
+      // Grade whichever of Task 1 / Task 2 / Speaking hasn't already
+      // succeeded (on a retry after a partial failure, skip the ones that
+      // already have an attempt id — no reason to burn quota re-grading a
+      // section that already graded fine).
+      const [task1Result, task2Result, speakingResult] = await Promise.allSettled([
+        task1Id ? Promise.resolve(null) : gradeEssay({ essay: task1Essay, prompt: assignment.writingTask1Prompt.text, taskType: 'task1' }),
+        task2Id ? Promise.resolve(null) : gradeEssay({ essay: task2Essay, prompt: assignment.writingTask2Prompt.text, taskType: 'task2' }),
+        speakingId ? Promise.resolve(null) : submitSpeakingAttempt({ topicId, recordings }),
+      ]);
+
+      const failed = [];
+      if (task1Result.status === 'fulfilled') {
+        if (task1Result.value) {
+          task1Id = task1Result.value.attemptId;
+          setWritingTask1AttemptId(task1Id);
+        }
+      } else failed.push('Writing Task 1');
+
+      if (task2Result.status === 'fulfilled') {
+        if (task2Result.value) {
+          task2Id = task2Result.value.attemptId;
+          setWritingTask2AttemptId(task2Id);
+        }
+      } else failed.push('Writing Task 2');
+
+      if (speakingResult.status === 'fulfilled') {
+        if (speakingResult.value) {
+          speakingId = speakingResult.value.attemptId;
+          setSpeakingAttemptId(speakingId);
+        }
+      } else failed.push('Speaking');
+
+      if (failed.length > 0) {
+        throw new Error(
+          `Grading failed for: ${failed.join(', ')}. Please try submitting again — sections that already graded successfully won't be repeated.`
+        );
+      }
 
       setFinalizing(true);
       const finalized = await finalizeFullTest(fullTestId, {
         listeningAttemptId,
         readingAttemptId,
-        writingTask1AttemptId,
-        writingTask2AttemptId,
-        speakingAttemptId,
+        writingTask1AttemptId: task1Id,
+        writingTask2AttemptId: task2Id,
+        speakingAttemptId: speakingId,
       });
 
       const [listeningDetail, readingDetail, task1Detail, task2Detail, speakingDetail] = await Promise.all([
         fetchListeningAttemptDetail(listeningAttemptId),
         fetchReadingAttemptDetail(readingAttemptId),
-        fetchEssayAttemptDetail(writingTask1AttemptId),
-        fetchEssayAttemptDetail(writingTask2AttemptId),
-        fetchAttemptDetail(speakingAttemptId),
+        fetchEssayAttemptDetail(task1Id),
+        fetchEssayAttemptDetail(task2Id),
+        fetchAttemptDetail(speakingId),
       ]);
 
       setResultsData({ finalized, listeningDetail, readingDetail, task1Detail, task2Detail, speakingDetail });
