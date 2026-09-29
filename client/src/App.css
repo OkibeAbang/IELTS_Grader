@@ -366,7 +366,7 @@ h3 {
     flex-direction: row;
     align-items: center;
     gap: 2px;
-    margin-left: 12px;
+    margin-left: 4px;
     min-width: 0;
     flex-shrink: 1;
     overflow-x: auto;
@@ -382,15 +382,44 @@ h3 {
     flex-shrink: 0;
   }
 
+  /* display: contents lets the account block's children (theme toggle,
+     profile bubble, logout) become direct flex items of .sidebar, so they
+     can be reordered with `order` alongside the brand/nav/spacer below. */
   .sidebar-account {
-    border-top: none;
-    padding-top: 0;
-    flex-direction: row;
-    align-items: center;
-    flex-shrink: 0;
+    display: contents;
+  }
+
+  .sidebar-top-row {
+    order: 0;
   }
 
   .sidebar-profile-link {
+    order: 1;
+    flex-direction: row;
+    padding: 4px;
+    margin: 0 0 0 12px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sidebar-nav {
+    order: 2;
+  }
+
+  .sidebar-spacer {
+    order: 3;
+  }
+
+  .sidebar-theme-toggle {
+    order: 4;
+  }
+
+  .top-nav-logout {
+    order: 5;
+  }
+
+  .sidebar-plan-badge,
+  .sidebar-profile-name {
     display: none;
   }
 
