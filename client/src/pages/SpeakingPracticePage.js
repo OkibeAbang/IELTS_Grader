@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { fetchSpeakingTopic, submitSpeakingAttempt, fetchLiveVoiceStatus } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import useDelayedNotice from '../hooks/useDelayedNotice';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
 import LiveSpeakingSession from '../components/speaking/LiveSpeakingSession';
@@ -35,6 +36,7 @@ export default function SpeakingPracticePage() {
   const [loadError, setLoadError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const showColdStartHint = useDelayedNotice(submitting, 6000);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendStatus, setResendStatus] = useState(null);
   const [result, setResult] = usePersistedState('speaking-practice:result', null);
@@ -207,6 +209,13 @@ export default function SpeakingPracticePage() {
             submitting={submitting}
           />
           {submitError && <div className="error-banner">{submitError}</div>}
+          {showColdStartHint && (
+            <p className="cold-start-hint">
+              Still working — grading audio takes longer than text, and if the server's been
+              idle for a while this can take up to a couple of minutes. No need to resubmit,
+              it's still processing.
+            </p>
+          )}
           {needsVerification && (
             <div className="error-banner">
               Verify your email before submitting for grading.{' '}

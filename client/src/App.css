@@ -2609,6 +2609,50 @@ a.hub-card:hover {
   text-align: center;
 }
 
+.marketing-footer-links {
+  max-width: 1120px;
+  margin: 10px auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.82rem;
+}
+
+.marketing-footer-links a {
+  color: var(--green-deep);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.marketing-footer-links a:hover {
+  text-decoration: underline;
+}
+
+.legal-page {
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.65;
+  color: var(--brown-deep);
+}
+
+.legal-page h2 {
+  margin-top: 32px;
+  font-size: 1.15rem;
+}
+
+.legal-page p,
+.legal-page ul {
+  color: var(--brown-text);
+}
+
+.legal-page a {
+  color: var(--green-deep);
+}
+
+.legal-table-wrap {
+  overflow-x: auto;
+}
+
 @media (max-width: 768px) {
   .marketing-nav-inner {
     padding: 14px 20px;

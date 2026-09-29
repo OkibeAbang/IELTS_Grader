@@ -177,7 +177,7 @@ export default function OverviewPage() {
     <div className="marketing-page">
       <header className="marketing-nav">
         <div className="marketing-nav-inner">
-          <Link to="/" className="marketing-brand">IELTS Grader</Link>
+          <Link to="/" className="marketing-brand">9Band</Link>
           <nav className="marketing-nav-links">
             <Link to="/essay-grader">Essay Grading</Link>
             <Link to="/reading">Reading</Link>
@@ -311,9 +311,15 @@ export default function OverviewPage() {
 
       <footer className="marketing-footer">
         <p>
-          IELTS Grader is an independent practice tool. Scores are AI-generated estimates,
-          not certified results — use them as a diagnostic signal, not a guaranteed exam outcome.
+          9Band is an independent IELTS practice tool, not affiliated with or endorsed by IELTS,
+          the British Council, IDP, or Cambridge Assessment English. Scores are AI-generated
+          estimates, not certified results — use them as a diagnostic signal, not a guaranteed
+          exam outcome.
         </p>
+        <div className="marketing-footer-links">
+          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/terms">Terms of Service</Link>
+        </div>
       </footer>
     </div>
   );

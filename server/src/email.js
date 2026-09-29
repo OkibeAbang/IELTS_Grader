@@ -29,7 +29,7 @@ async function sendEmail({ to, subject, text }) {
   }
 
   await getTransporter().sendMail({
-    from: process.env.EMAIL_FROM || "no-reply@ielts-grader.local",
+    from: process.env.EMAIL_FROM || "no-reply@9band.local",
     to,
     subject,
     text,

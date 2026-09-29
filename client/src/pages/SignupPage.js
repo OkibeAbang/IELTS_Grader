@@ -89,6 +89,10 @@ export default function SignupPage() {
       <p className="auth-switch">
         Already have an account? <Link to="/login">Log in</Link>
       </p>
+      <p className="auth-switch">
+        By signing up, you agree to our <Link to="/terms">Terms of Service</Link> and{' '}
+        <Link to="/privacy">Privacy Policy</Link>.
+      </p>
     </div>
   );
 }

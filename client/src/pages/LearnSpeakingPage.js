@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { fetchSpeakingTopic, submitSpeakingDrill } from '../api/speaking';
 import { useAuth } from '../hooks/useAuth';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import useDelayedNotice from '../hooks/useDelayedNotice';
 import QuestionTypePicker from '../components/QuestionTypePicker';
 import TopicPicker from '../components/speaking/TopicPicker';
 import Part1Conversation from '../components/speaking/Part1Conversation';
@@ -28,6 +29,7 @@ export default function LearnSpeakingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [result, setResult] = usePersistedState('speaking-drill:result', null);
+  const showColdStartHint = useDelayedNotice(submitting, 6000);
 
   useEffect(() => {
     if (!topicId) return;
@@ -105,6 +107,13 @@ export default function LearnSpeakingPage() {
       )}
 
       {submitting && <p className="app-subtitle">Scoring your recording…</p>}
+      {showColdStartHint && (
+        <p className="cold-start-hint">
+          Still working — grading audio takes longer than text, and if the server's been idle
+          for a while this can take up to a couple of minutes. No need to resubmit, it's still
+          processing.
+        </p>
+      )}
       {submitError && <div className="error-banner">{submitError}</div>}
       {result && <SpeakingSectionResultsView result={result} />}
 

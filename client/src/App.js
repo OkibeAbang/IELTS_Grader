@@ -22,6 +22,8 @@ import TeacherAttemptReviewPage from './pages/TeacherAttemptReviewPage';
 import PracticeHubPage from './pages/PracticeHubPage';
 import LearnHubPage from './pages/LearnHubPage';
 import PricingPage from './pages/PricingPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import BillingPage from './pages/BillingPage';
 import FullTestPage from './pages/FullTestPage';
 import ProfilePage from './pages/ProfilePage';
@@ -79,7 +81,7 @@ function Sidebar() {
   return (
     <aside className={collapsed ? 'sidebar sidebar-collapsed' : 'sidebar'}>
       <div className="sidebar-top-row">
-        <Link to="/" className="sidebar-brand">IELTS Grader</Link>
+        <Link to="/" className="sidebar-brand">9Band</Link>
         <button
           type="button"
           className="theme-toggle sidebar-collapse-toggle"
@@ -237,6 +239,8 @@ function AppRoutes() {
       />
       <Route element={<AppLayout />}>
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
         <Route
           path="/billing"
           element={
