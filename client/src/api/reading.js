@@ -31,6 +31,13 @@ export async function deleteReadingAttempt(id) {
   await requestJson(`/api/reading/attempts/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+export async function submitReadingFullTest(answersByPassageId) {
+  return requestJson('/api/reading/attempts/full-test', {
+    method: 'POST',
+    body: JSON.stringify({ answersByPassageId }),
+  });
+}
+
 export async function submitReadingDrill(passageId, questionType, answers) {
   return requestJson('/api/reading/attempts/drill', {
     method: 'POST',

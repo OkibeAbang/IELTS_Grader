@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchListeningAttemptDetail } from '../api/listening';
 import ListeningResultsView from '../components/ListeningResultsView';
+import ListeningFullTestResultsView from '../components/ListeningFullTestResultsView';
 
 export default function ListeningAttemptDetailPage() {
   const { id } = useParams();
@@ -29,7 +30,8 @@ export default function ListeningAttemptDetailPage() {
 
       {error && <div className="error-banner">{error}</div>}
 
-      {attempt && <ListeningResultsView result={attempt} />}
+      {attempt && attempt.sectionResults && <ListeningFullTestResultsView result={attempt} />}
+      {attempt && !attempt.sectionResults && <ListeningResultsView result={attempt} />}
 
       <Link to="/speaking/history" className="btn-secondary">
         Back to history

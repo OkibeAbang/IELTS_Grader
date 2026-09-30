@@ -1,32 +1,9 @@
-import { getReadingPassageWithAnswers } from "./readingPassageBank.js";
+import { getReadingPassageWithAnswers, getAllReadingPassagesWithAnswers } from "./readingPassageBank.js";
 import { bandForScore } from "./bandConversionTable.js";
+import { isCorrect } from "./markingEngine.js";
 
-function normalize(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
-}
-
-function isCorrect(question, userAnswer) {
-  const norm = normalize(userAnswer);
-  if (!norm) return false;
-  if (question.type === "short_answer") {
-    const accepted = (question.acceptableAnswers ?? [question.correctAnswer]).map(normalize);
-    return accepted.includes(norm);
-  }
-  return normalize(question.correctAnswer) === norm;
-}
-
-function scoreReadingAttempt({ passageId, answers }) {
-  const passage = getReadingPassageWithAnswers(passageId);
-  if (!passage) {
-    const err = new Error("Passage not found");
-    err.code = "PASSAGE_NOT_FOUND";
-    throw err;
-  }
-
-  const questionResults = passage.questions.map((q) => {
+function scoreQuestions(questions, answers) {
+  return questions.map((q) => {
     const userAnswer = answers?.[q.id] ?? "";
     return {
       id: q.id,
@@ -37,7 +14,17 @@ function scoreReadingAttempt({ passageId, answers }) {
       isCorrect: isCorrect(q, userAnswer),
     };
   });
+}
 
+function scoreReadingAttempt({ passageId, answers }) {
+  const passage = getReadingPassageWithAnswers(passageId);
+  if (!passage) {
+    const err = new Error("Passage not found");
+    err.code = "PASSAGE_NOT_FOUND";
+    throw err;
+  }
+
+  const questionResults = scoreQuestions(passage.questions, answers);
   const correctCount = questionResults.filter((r) => r.isCorrect).length;
   const totalQuestions = passage.questions.length;
 
@@ -48,6 +35,38 @@ function scoreReadingAttempt({ passageId, answers }) {
     totalQuestions,
     overallBand: bandForScore(correctCount, totalQuestions),
     questionResults,
+  };
+}
+
+// Scores every passage in the bank as one continuous test (real IELTS
+// Reading: 3 passages, one sitting, one combined score) rather than a
+// single passage in isolation. answersByPassageId is keyed by passage id,
+// each value the same {questionId: answer} shape scoreReadingAttempt takes.
+function scoreReadingFullTest({ answersByPassageId }) {
+  const passages = getAllReadingPassagesWithAnswers();
+
+  const passageResults = passages.map((passage) => {
+    const answers = answersByPassageId?.[passage.id] ?? {};
+    const questionResults = scoreQuestions(passage.questions, answers);
+    const correctCount = questionResults.filter((r) => r.isCorrect).length;
+    return {
+      passageId: passage.id,
+      passageTitle: passage.title,
+      part: passage.part,
+      correctCount,
+      totalQuestions: passage.questions.length,
+      questionResults,
+    };
+  });
+
+  const correctCount = passageResults.reduce((sum, p) => sum + p.correctCount, 0);
+  const totalQuestions = passageResults.reduce((sum, p) => sum + p.totalQuestions, 0);
+
+  return {
+    correctCount,
+    totalQuestions,
+    overallBand: bandForScore(correctCount, totalQuestions),
+    passageResults,
   };
 }
 
@@ -66,17 +85,7 @@ function scoreReadingDrill({ passageId, questionType, answers }) {
     throw err;
   }
 
-  const questionResults = questions.map((q) => {
-    const userAnswer = answers?.[q.id] ?? "";
-    return {
-      id: q.id,
-      type: q.type,
-      prompt: q.prompt,
-      userAnswer,
-      correctAnswer: q.correctAnswer,
-      isCorrect: isCorrect(q, userAnswer),
-    };
-  });
+  const questionResults = scoreQuestions(questions, answers);
 
   const correctCount = questionResults.filter((r) => r.isCorrect).length;
   const totalQuestions = questions.length;
@@ -92,4 +101,4 @@ function scoreReadingDrill({ passageId, questionType, answers }) {
   };
 }
 
-export { scoreReadingAttempt, scoreReadingDrill };
+export { scoreReadingAttempt, scoreReadingDrill, scoreReadingFullTest };

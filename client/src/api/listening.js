@@ -35,6 +35,13 @@ export async function deleteListeningAttempt(id) {
   await requestJson(`/api/listening/attempts/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+export async function submitListeningFullTest(answersBySectionId) {
+  return requestJson('/api/listening/attempts/full-test', {
+    method: 'POST',
+    body: JSON.stringify({ answersBySectionId }),
+  });
+}
+
 export async function submitListeningDrill(sectionId, questionType, answers) {
   return requestJson('/api/listening/attempts/drill', {
     method: 'POST',

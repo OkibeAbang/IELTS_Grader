@@ -8,6 +8,12 @@
 const QUESTION_TYPES = {
   MULTIPLE_CHOICE: "multiple_choice",
   TRUE_FALSE_NOT_GIVEN: "true_false_not_given",
+  // Distinct from TRUE_FALSE_NOT_GIVEN, not interchangeable with it: T/F/NG
+  // tests factual claims made in the passage; Y/N/NG tests whether the
+  // writer's own stated opinions/claims match a given statement. Real IELTS
+  // treats these as different question types (usually T/F/NG on descriptive
+  // passages, Y/N/NG on argumentative ones).
+  YES_NO_NOT_GIVEN: "yes_no_not_given",
   SHORT_ANSWER: "short_answer",
 };
 
@@ -15,6 +21,7 @@ const READING_PASSAGES = [
   {
     id: "rp-01",
     title: "Bringing Back the Beaver",
+    part: 1,
     estimatedMinutes: 20,
     paragraphs: [
       {
@@ -145,6 +152,277 @@ const READING_PASSAGES = [
       },
     ],
   },
+  {
+    id: "rp-02",
+    title: "The Return of the Repair Café",
+    part: 2,
+    estimatedMinutes: 20,
+    paragraphs: [
+      {
+        label: "A",
+        text: "On a wet Saturday morning in a church hall in Amsterdam in October 2009, a former journalist named Martine Postma set up six folding tables, invited a handful of volunteers with a talent for fixing things, and asked local residents to bring in whatever household items they had given up on: toasters that no longer toasted, lamps that had gone dark, jeans with failed zips, laptops that would not start. Within a few hours nearly all of the forty broken items brought in that day had been repaired, free of charge, by volunteers working alongside their owners rather than simply handing back a finished job. Postma called the event a Repair Café, and, expecting it to be a one-off, was surprised when people began asking when the next one would be held. Fifteen years later, the concept she founded operates in more than 3,000 locations across at least 35 countries, run almost entirely by unpaid volunteers and funded through small donations and local grants.",
+      },
+      {
+        label: "B",
+        text: "The environmental case for repair cafés has grown more urgent as the scale of electronic waste has become clearer. Global e-waste is now estimated to exceed 60 million tonnes a year, a figure that has roughly doubled in the past decade and is rising faster than any other domestic waste stream. Campaigners argue that much of this waste is unnecessary, pointing to manufacturing practices that make some devices deliberately difficult or uneconomical to fix: batteries sealed inside casings rather than user-replaceable, proprietary screws that require specialist tools, and repair manuals that are simply never published. Repair cafés position themselves as a direct, practical response to this trend, extending the working life of ordinary household items and, their advocates argue, doing more in a single afternoon to embed the principles of a circular economy — where materials are reused and repaired rather than discarded — than years of public information campaigns about recycling.",
+      },
+      {
+        label: "C",
+        text: "Equally important to many volunteers, however, is the social function these events serve. A typical repair café draws a mix of retired electricians, engineers, seamstresses and hobbyists, many of whom say the appeal lies as much in passing on a skill as in the repair itself. Visitors are actively encouraged to sit alongside the volunteer working on their item, tools in hand, rather than dropping it off and returning later, and organisers report that this exchange — a retired appliance repairer talking a teenager through rewiring a plug, for instance — has become as central to the model as the repairs themselves. Researchers studying the phenomenon have noted that repair cafés tend to attract a wider social mix than most community volunteering schemes, and several local councils in the Netherlands and Belgium now part-fund them explicitly as a means of reducing isolation among older residents, rather than purely as an environmental initiative.",
+      },
+      {
+        label: "D",
+        text: "The model is not without its difficulties. Volunteers report that certain categories of item have become steadily harder to repair: smartphones and laptops in particular, where components are often glued rather than screwed together, and where a single cracked screen can be uneconomical to replace even when a volunteer is willing to try. Spare parts for older appliances are frequently unavailable at any price, forcing volunteers to salvage components from other broken donations or to turn visitors away empty-handed. Volunteer numbers have also proved harder to sustain in some areas than founders originally hoped; a survey of repair café organisers in the United Kingdom found that around one in six groups that had started between 2015 and 2020 had since folded, most citing an ageing volunteer base and difficulty recruiting younger replacements as the primary reason.",
+      },
+      {
+        label: "E",
+        text: "Policymakers have begun to respond to some of these pressures. The European Union's 'right to repair' directive, which came into force in 2024, now obliges manufacturers of certain appliances to make spare parts and repair information available to independent repairers, not solely to authorised dealers, for a minimum number of years after a product's release. A small number of manufacturers have gone further voluntarily, publishing free repair manuals or introducing modular designs that allow a battery or screen to be replaced with basic tools. Whether such measures will be enough to offset the underlying trend towards sealed, disposable electronics remains an open question, but for the volunteers who staff repair cafés each week, the answer matters less than the immediate, tangible satisfaction of watching someone walk out with a lamp that lights up again.",
+      },
+    ],
+    questions: [
+      {
+        id: "q1",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph A, how did Martine Postma initially regard the first Repair Café event?",
+        options: [
+          { key: "A", text: "As the launch of an international movement" },
+          { key: "B", text: "As a single, non-recurring event" },
+          { key: "C", text: "As a way of promoting her journalism" },
+          { key: "D", text: "As a fundraising event for a local charity" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q2",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "In paragraph B, what does the writer suggest about some manufacturers' design choices?",
+        options: [
+          { key: "A", text: "They are intended to reduce production costs above all else" },
+          { key: "B", text: "They make items more difficult to repair than necessary" },
+          { key: "C", text: "They are primarily driven by new safety regulations" },
+          { key: "D", text: "They have improved significantly over the last decade" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q3",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "Why do some local councils in the Netherlands and Belgium help fund repair cafés, according to paragraph C?",
+        options: [
+          { key: "A", text: "To reduce the amount they spend on landfill sites" },
+          { key: "B", text: "To create paid employment for skilled tradespeople" },
+          { key: "C", text: "To help address loneliness among older residents" },
+          { key: "D", text: "To meet European Union recycling targets" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: "q4",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What does the UK survey mentioned in paragraph D suggest about repair cafés?",
+        options: [
+          { key: "A", text: "Most have closed due to a lack of donated items" },
+          { key: "B", text: "A significant minority have shut down due to volunteer shortages" },
+          { key: "C", text: "They are more common in the UK than in mainland Europe" },
+          { key: "D", text: "They now focus mainly on repairing smartphones and laptops" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q5",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "The first Repair Café was held in a purpose-built workshop.",
+        correctAnswer: "FALSE",
+      },
+      {
+        id: "q6",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Global e-waste has been growing faster than other types of household waste.",
+        correctAnswer: "TRUE",
+      },
+      {
+        id: "q7",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Every repair café volunteer is a retired professional tradesperson.",
+        correctAnswer: "NOT GIVEN",
+      },
+      {
+        id: "q8",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "All manufacturers are now required to publish free repair manuals.",
+        correctAnswer: "FALSE",
+      },
+      {
+        id: "q9",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "In what year was the first Repair Café held?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "2009",
+        acceptableAnswers: ["2009"],
+      },
+      {
+        id: "q10",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "Approximately how many tonnes of e-waste are now generated globally each year?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "60 million tonnes",
+        acceptableAnswers: ["60 million tonnes", "60 million", "over 60 million tonnes"],
+      },
+      {
+        id: "q11",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "What term is used in paragraph B for an economic model where materials are reused and repaired rather than discarded?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "circular economy",
+        acceptableAnswers: ["circular economy", "a circular economy"],
+      },
+      {
+        id: "q12",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "In what year did the European Union's 'right to repair' directive take effect?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "2024",
+        acceptableAnswers: ["2024"],
+      },
+    ],
+  },
+  {
+    id: "rp-03",
+    title: "Reassessing the Bystander Effect",
+    part: 3,
+    estimatedMinutes: 20,
+    paragraphs: [
+      {
+        label: "A",
+        text: "Few findings in social psychology have entered popular consciousness as thoroughly as the bystander effect: the notion that an individual in trouble is, counterintuitively, less likely to receive help the more witnesses are present. The idea gained its cultural foothold following the 1964 murder of Kitty Genovese in New York, widely reported at the time as having been witnessed by dozens of neighbours who did nothing to intervene, though later journalistic reviews found this account exaggerated the number of witnesses and misrepresented what they had actually seen and heard. Independently of the accuracy of that particular case, the psychologists John Darley and Bibb Latané went on to formalise the underlying idea in a series of laboratory experiments beginning in 1968, coining the term 'diffusion of responsibility' to describe their central finding: that as the number of bystanders to an emergency increases, each individual feels less personal obligation to act, on the assumption that someone else will.",
+      },
+      {
+        label: "B",
+        text: "The classic experimental paradigm that followed was elegantly simple. Participants, usually seated alone in a room, were led to believe they were taking part in a discussion via intercom with either one, two, or five other participants. At a scripted moment, one 'participant' — in reality a recording — would appear to suffer a medical emergency. Darley and Latané measured how quickly, and how often, real participants left the room to seek help. The results were strikingly consistent: when participants believed themselves to be the sole witness, the overwhelming majority responded within a minute; when they believed four other people were also listening in, response rates dropped sharply and some participants failed to respond at all before the experiment was halted. Variations on this design — including staged emergencies involving smoke filling a room, or a nearby actor pretending to collapse — produced comparable results across hundreds of subsequent studies, embedding the phenomenon firmly within psychology's experimental canon.",
+      },
+      {
+        label: "C",
+        text: "More recently, however, a body of research using real-world evidence has begun to complicate this picture considerably. In a widely discussed 2019 study, the psychologist Richard Philpot and colleagues analysed security camera footage of 219 actual public conflicts and emergencies captured across three countries, rather than relying on staged laboratory scenarios. Their central finding ran directly counter to the classic paradigm: in 90 percent of the recorded incidents, at least one bystander intervened to help the victim, and — crucially — the likelihood of intervention did not decrease as the number of bystanders present increased. If anything, larger crowds were slightly more likely to produce an intervention, not less, since a greater number of onlookers meant a greater chance that at least one of them would act.",
+      },
+      {
+        label: "D",
+        text: "How can this apparent contradiction be reconciled? Several explanations have been proposed. One is methodological: laboratory studies typically present participants with ambiguous, non-visible emergencies — a colleague apparently choking, heard only through an intercom — whereas real street conflicts are immediate, visually unambiguous, and often physically dangerous in ways that may override the more deliberative, socially mediated hesitation that diffusion of responsibility describes. A second explanation concerns anonymity: laboratory participants know they are being studied yet remain isolated from one another, with no lasting social consequence for inaction, whereas bystanders to a real emergency are frequently known to each other, or to the victim, and must live afterwards with the reputational cost of having stood by. A third, more provocative possibility is that decades of research built almost entirely on staged, low-stakes laboratory scenarios may simply have limited applicability to how people behave when something is genuinely, visibly at stake.",
+      },
+      {
+        label: "E",
+        text: "None of this means the original experiments were poorly conducted, or that diffusion of responsibility never operates; ambiguous, low-urgency situations — a suspicious package left unattended, a stranger who appears merely unwell rather than in acute danger — may still produce exactly the hesitation Darley and Latané described. What the newer evidence does suggest is that a finding treated for half a century as a near-universal law of human behaviour may in fact be highly dependent on the artificial conditions under which it was first observed, and that public safety campaigns built on the assumption that crowds are reliably unhelpful may be starting from a flawed premise. Some researchers now argue for a more cautious framing: that people are considerably more likely to help one another, even in large crowds, than eighty years of popular psychology has led the public to believe.",
+      },
+    ],
+    questions: [
+      {
+        id: "q1",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What does the writer say about press coverage of the Kitty Genovese case in paragraph A?",
+        options: [
+          { key: "A", text: "It was later found to have understated the number of witnesses" },
+          { key: "B", text: "It accurately described what witnesses had seen and heard" },
+          { key: "C", text: "It exaggerated aspects of what actually occurred" },
+          { key: "D", text: "It was based on Darley and Latané's original research" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: "q2",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "In the classic experiments described in paragraph B, what happened to response rates as the number of believed bystanders increased?",
+        options: [
+          { key: "A", text: "They remained essentially unchanged" },
+          { key: "B", text: "They increased slightly" },
+          { key: "C", text: "They dropped sharply" },
+          { key: "D", text: "They became impossible to measure" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: "q3",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What was the central finding of Philpot's 2019 study, described in paragraph C?",
+        options: [
+          { key: "A", text: "Bystanders rarely intervened in real public conflicts" },
+          { key: "B", text: "Intervention rates did not fall as crowd size increased" },
+          { key: "C", text: "Security cameras were an unreliable source of evidence" },
+          { key: "D", text: "Real emergencies are rarer than laboratory studies suggest" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q4",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph D, how do laboratory emergencies typically differ from real street conflicts?",
+        options: [
+          { key: "A", text: "Laboratory emergencies are usually more visually direct and immediate" },
+          { key: "B", text: "Laboratory emergencies are typically more ambiguous and less visible" },
+          { key: "C", text: "Real conflicts rarely involve any physical danger" },
+          { key: "D", text: "Real conflicts are usually witnessed by complete strangers only" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q5",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Darley and Latané were the first psychologists to use the phrase 'diffusion of responsibility'.",
+        correctAnswer: "TRUE",
+      },
+      {
+        id: "q6",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "The Philpot study relied on participants' own written accounts of emergencies they had witnessed.",
+        correctAnswer: "FALSE",
+      },
+      {
+        id: "q7",
+        // Yes/No/Not Given, not True/False/Not Given: this tests the
+        // writer's own stated opinion ("the writer believes..."), not a
+        // factual claim made in the passage.
+        type: QUESTION_TYPES.YES_NO_NOT_GIVEN,
+        prompt: "The writer believes the original bystander experiments were carried out incompetently.",
+        correctAnswer: "NO",
+      },
+      {
+        id: "q8",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Every researcher in the field now agrees that diffusion of responsibility does not exist.",
+        correctAnswer: "NOT GIVEN",
+      },
+      {
+        id: "q9",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "In what year did Darley and Latané begin their laboratory experiments?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "1968",
+        acceptableAnswers: ["1968"],
+      },
+      {
+        id: "q10",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "How many real public conflicts did Philpot and colleagues analyse using security camera footage?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "219",
+        acceptableAnswers: ["219", "219 incidents", "219 conflicts"],
+      },
+      {
+        id: "q11",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "In what percentage of the incidents Philpot analysed did at least one bystander intervene?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "90 percent",
+        acceptableAnswers: ["90 percent", "90%", "90 per cent"],
+      },
+      {
+        id: "q12",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "According to paragraph D, what may bystanders to a real emergency have to live with afterwards if they fail to act?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "reputational cost",
+        acceptableAnswers: ["reputational cost", "the reputational cost", "a reputational cost"],
+      },
+    ],
+  },
 ];
 
 function toPublicQuestion({ correctAnswer, acceptableAnswers, ...rest }) {
@@ -174,4 +452,16 @@ function getReadingPassageWithAnswers(id) {
   return READING_PASSAGES.find((p) => p.id === id);
 }
 
-export { QUESTION_TYPES, getReadingPassageBank, getReadingPassage, getReadingPassageWithAnswers };
+// Server-internal only, same reason — used by scoreReadingFullTest to score
+// every passage in the bank as one continuous test.
+function getAllReadingPassagesWithAnswers() {
+  return READING_PASSAGES;
+}
+
+export {
+  QUESTION_TYPES,
+  getReadingPassageBank,
+  getReadingPassage,
+  getReadingPassageWithAnswers,
+  getAllReadingPassagesWithAnswers,
+};

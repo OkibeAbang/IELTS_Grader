@@ -4,7 +4,18 @@ import QuestionInput from '../QuestionInput';
 
 const TIMER_SECONDS = 20 * 60;
 
-export default function PassageViewer({ passage, answers, onAnswerChange, onSubmit, submitting, showTimer = true, persistKey }) {
+export default function PassageViewer({
+  passage,
+  answers,
+  onAnswerChange,
+  onSubmit,
+  submitting,
+  showTimer = true,
+  persistKey,
+  startIndex = 0,
+  submitLabel = 'Submit answers',
+  submittingLabel = 'Scoring…',
+}) {
   const [timerEnabled, setTimerEnabled] = usePersistedState(
     persistKey ? `${persistKey}:timerEnabled` : 'passage-viewer:timerEnabled-unkeyed',
     false
@@ -74,14 +85,14 @@ export default function PassageViewer({ passage, answers, onAnswerChange, onSubm
         {passage.questions.map((q, i) => (
           <div key={q.id} className="reading-question">
             <p className="reading-question-prompt">
-              {i + 1}. {q.prompt}
+              {startIndex + i + 1}. {q.prompt}
             </p>
             <QuestionInput question={q} value={answers[q.id]} onChange={onAnswerChange} />
           </div>
         ))}
 
         <button type="button" className="submit-btn" onClick={onSubmit} disabled={submitting}>
-          {submitting ? 'Scoring…' : 'Submit answers'}
+          {submitting ? submittingLabel : submitLabel}
         </button>
       </div>
     </div>

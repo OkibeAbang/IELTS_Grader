@@ -21,6 +21,7 @@ const SECTION_LABELS = {
 const QUESTION_TYPE_LABELS = {
   multiple_choice: 'Multiple Choice',
   true_false_not_given: 'True/False/Not Given',
+  yes_no_not_given: 'Yes/No/Not Given',
   short_answer: 'Short Answer',
 };
 
@@ -32,6 +33,8 @@ const SPEAKING_PART_LABELS = {
 
 function modeLabel(attempt) {
   if (attempt.mode === 'full') return 'Full Test';
+  if (attempt.mode === 'full_reading_test') return 'Full Reading Test';
+  if (attempt.mode === 'full_listening_test') return 'Full Listening Test';
   return `Drill — ${QUESTION_TYPE_LABELS[attempt.questionType] ?? attempt.questionType}`;
 }
 

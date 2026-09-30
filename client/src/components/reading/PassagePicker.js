@@ -29,6 +29,7 @@ export default function PassagePicker({ onSelect }) {
           <button key={p.id} type="button" className="topic-card" onClick={() => onSelect(p.id)}>
             <span className="topic-card-title">{p.title}</span>
             <span className="topic-card-badges">
+              <span className="topic-badge">Part {p.part}</span>
               <span className="topic-badge">{p.questionCount} questions</span>
               <span className="topic-badge topic-badge-duration">
                 <Clock size={12} aria-hidden="true" /> ~{p.estimatedMinutes} min

@@ -1,5 +1,7 @@
 import ReadingResultsView from './ReadingResultsView';
+import ReadingFullTestResultsView from './ReadingFullTestResultsView';
 import ListeningResultsView from './ListeningResultsView';
+import ListeningFullTestResultsView from './ListeningFullTestResultsView';
 import ResultsView from './ResultsView';
 import SpeakingResultsView from './SpeakingResultsView';
 
@@ -26,12 +28,20 @@ export default function FullTestResultsView({ finalized, listeningDetail, readin
 
       <section>
         <h2>Listening</h2>
-        <ListeningResultsView result={listeningDetail} />
+        {listeningDetail.sectionResults ? (
+          <ListeningFullTestResultsView result={listeningDetail} />
+        ) : (
+          <ListeningResultsView result={listeningDetail} />
+        )}
       </section>
 
       <section>
         <h2>Reading</h2>
-        <ReadingResultsView result={readingDetail} />
+        {readingDetail.passageResults ? (
+          <ReadingFullTestResultsView result={readingDetail} />
+        ) : (
+          <ReadingResultsView result={readingDetail} />
+        )}
       </section>
 
       <section>

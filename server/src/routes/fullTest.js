@@ -1,8 +1,6 @@
 import express from "express";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
-import { getReadingPassageBank } from "../readingPassageBank.js";
-import { getListeningSectionBank } from "../listeningPassageBank.js";
 import { getPromptBank } from "../promptBank.js";
 import { getSpeakingTopicBank } from "../speakingQuestionBank.js";
 import { roundToIELTSBand } from "../ieltsBandRounding.js";
@@ -26,8 +24,11 @@ function pickRandom(list) {
 
 router.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
   try {
-    const readingPassage = pickRandom(getReadingPassageBank());
-    const listeningSection = pickRandom(getListeningSectionBank());
+    // Reading and Listening no longer get a single assigned passage/section
+    // id — Full Test's reading/listening steps now run the same continuous,
+    // all-passages/all-sections test as standalone practice (real IELTS
+    // Reading/Listening always covers everything, not one passage picked
+    // at random).
     const task1Prompt = pickRandom(getPromptBank("task1"));
     const task2Prompt = pickRandom(getPromptBank("task2"));
     const speakingTopic = pickRandom(getSpeakingTopicBank());
@@ -37,8 +38,6 @@ router.post("/", requireAuth, requireVerifiedEmail, async (req, res) => {
     res.status(201).json({
       fullTest,
       assignment: {
-        readingPassageId: readingPassage.id,
-        listeningSectionId: listeningSection.id,
         writingTask1Prompt: { id: task1Prompt.id, text: task1Prompt.text },
         writingTask2Prompt: { id: task2Prompt.id, text: task2Prompt.text },
         speakingTopicId: speakingTopic.id,

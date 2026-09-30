@@ -1,32 +1,9 @@
-import { getListeningSectionWithAnswers } from "./listeningPassageBank.js";
+import { getListeningSectionWithAnswers, getAllListeningSectionsWithAnswers } from "./listeningPassageBank.js";
 import { bandForScore } from "./bandConversionTable.js";
+import { isCorrect } from "./markingEngine.js";
 
-function normalize(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
-}
-
-function isCorrect(question, userAnswer) {
-  const norm = normalize(userAnswer);
-  if (!norm) return false;
-  if (question.type === "short_answer") {
-    const accepted = (question.acceptableAnswers ?? [question.correctAnswer]).map(normalize);
-    return accepted.includes(norm);
-  }
-  return normalize(question.correctAnswer) === norm;
-}
-
-function scoreListeningAttempt({ sectionId, answers }) {
-  const section = getListeningSectionWithAnswers(sectionId);
-  if (!section) {
-    const err = new Error("Section not found");
-    err.code = "SECTION_NOT_FOUND";
-    throw err;
-  }
-
-  const questionResults = section.questions.map((q) => {
+function scoreQuestions(questions, answers) {
+  return questions.map((q) => {
     const userAnswer = answers?.[q.id] ?? "";
     return {
       id: q.id,
@@ -37,7 +14,17 @@ function scoreListeningAttempt({ sectionId, answers }) {
       isCorrect: isCorrect(q, userAnswer),
     };
   });
+}
 
+function scoreListeningAttempt({ sectionId, answers }) {
+  const section = getListeningSectionWithAnswers(sectionId);
+  if (!section) {
+    const err = new Error("Section not found");
+    err.code = "SECTION_NOT_FOUND";
+    throw err;
+  }
+
+  const questionResults = scoreQuestions(section.questions, answers);
   const correctCount = questionResults.filter((r) => r.isCorrect).length;
   const totalQuestions = section.questions.length;
 
@@ -49,6 +36,40 @@ function scoreListeningAttempt({ sectionId, answers }) {
     totalQuestions,
     overallBand: bandForScore(correctCount, totalQuestions),
     questionResults,
+  };
+}
+
+// Scores every section in the bank as one continuous test (real IELTS
+// Listening: 4 parts, one continuous recording, one combined score) rather
+// than a single section in isolation. answersBySectionId is keyed by
+// section id, each value the same {questionId: answer} shape
+// scoreListeningAttempt takes.
+function scoreListeningFullTest({ answersBySectionId }) {
+  const sections = getAllListeningSectionsWithAnswers();
+
+  const sectionResults = sections.map((section) => {
+    const answers = answersBySectionId?.[section.id] ?? {};
+    const questionResults = scoreQuestions(section.questions, answers);
+    const correctCount = questionResults.filter((r) => r.isCorrect).length;
+    return {
+      sectionId: section.id,
+      sectionTitle: section.title,
+      part: section.part,
+      script: section.script,
+      correctCount,
+      totalQuestions: section.questions.length,
+      questionResults,
+    };
+  });
+
+  const correctCount = sectionResults.reduce((sum, s) => sum + s.correctCount, 0);
+  const totalQuestions = sectionResults.reduce((sum, s) => sum + s.totalQuestions, 0);
+
+  return {
+    correctCount,
+    totalQuestions,
+    overallBand: bandForScore(correctCount, totalQuestions),
+    sectionResults,
   };
 }
 
@@ -67,17 +88,7 @@ function scoreListeningDrill({ sectionId, questionType, answers }) {
     throw err;
   }
 
-  const questionResults = questions.map((q) => {
-    const userAnswer = answers?.[q.id] ?? "";
-    return {
-      id: q.id,
-      type: q.type,
-      prompt: q.prompt,
-      userAnswer,
-      correctAnswer: q.correctAnswer,
-      isCorrect: isCorrect(q, userAnswer),
-    };
-  });
+  const questionResults = scoreQuestions(questions, answers);
 
   const correctCount = questionResults.filter((r) => r.isCorrect).length;
   const totalQuestions = questions.length;
@@ -94,4 +105,4 @@ function scoreListeningDrill({ sectionId, questionType, answers }) {
   };
 }
 
-export { scoreListeningAttempt, scoreListeningDrill };
+export { scoreListeningAttempt, scoreListeningDrill, scoreListeningFullTest };

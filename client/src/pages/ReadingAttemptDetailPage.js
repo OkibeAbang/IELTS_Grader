@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchReadingAttemptDetail } from '../api/reading';
 import ReadingResultsView from '../components/ReadingResultsView';
+import ReadingFullTestResultsView from '../components/ReadingFullTestResultsView';
 
 export default function ReadingAttemptDetailPage() {
   const { id } = useParams();
@@ -29,7 +30,8 @@ export default function ReadingAttemptDetailPage() {
 
       {error && <div className="error-banner">{error}</div>}
 
-      {attempt && <ReadingResultsView result={attempt} />}
+      {attempt && attempt.passageResults && <ReadingFullTestResultsView result={attempt} />}
+      {attempt && !attempt.passageResults && <ReadingResultsView result={attempt} />}
 
       <Link to="/speaking/history" className="btn-secondary">
         Back to history

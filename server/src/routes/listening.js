@@ -1,6 +1,6 @@
 import express from "express";
 import { getListeningSectionBank, getListeningSection } from "../listeningPassageBank.js";
-import { scoreListeningAttempt, scoreListeningDrill } from "../scoreListening.js";
+import { scoreListeningAttempt, scoreListeningDrill, scoreListeningFullTest } from "../scoreListening.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/listeningAttempts.js";
 import { streamListeningAudio } from "../audioStorage.js";
@@ -64,6 +64,39 @@ router.post("/attempts", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Section not found" });
     }
     console.error("Listening scoring failed:", err);
+    res.status(502).json({ error: "Scoring failed. Please try again." });
+  }
+});
+
+// Real IELTS Listening: 4 parts in one continuous ~30-minute recording, one
+// combined score — not a single section in isolation. Same reuse pattern as
+// Reading's full-test route: existing listening_attempts table, new
+// mode value, JSON blob columns absorb the multi-section shape without a
+// migration.
+router.post("/attempts/full-test", requireAuth, async (req, res) => {
+  const { answersBySectionId } = req.body ?? {};
+
+  if (typeof answersBySectionId !== "object" || answersBySectionId === null) {
+    return res.status(400).json({ error: "answersBySectionId must be an object" });
+  }
+
+  try {
+    const result = scoreListeningFullTest({ answersBySectionId });
+    const sectionCount = result.sectionResults.length;
+    const attempt = await createAttempt({
+      userId: req.user.id,
+      sectionId: JSON.stringify(result.sectionResults.map((s) => s.sectionId)),
+      sectionTitle: `Full Listening Test (${sectionCount} part${sectionCount === 1 ? "" : "s"})`,
+      mode: "full_listening_test",
+      answers: answersBySectionId,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      overallBand: result.overallBand,
+      rawResult: result,
+    });
+    res.status(201).json({ ...result, attemptId: attempt.id });
+  } catch (err) {
+    console.error("Listening full-test scoring failed:", err);
     res.status(502).json({ error: "Scoring failed. Please try again." });
   }
 });

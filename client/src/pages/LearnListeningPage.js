@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { fetchListeningSections, fetchListeningSection, submitListeningDrill } from '../api/listening';
+import { fetchListeningSection, submitListeningDrill } from '../api/listening';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
+import SectionPicker from '../components/listening/SectionPicker';
 import QuestionTypePicker from '../components/QuestionTypePicker';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
 import QuestionInput from '../components/QuestionInput';
@@ -13,9 +14,10 @@ const TYPE_LABELS = {
   short_answer: { label: 'Short Answer', description: 'Form/note completion' },
 };
 
-const KEYS = ['listening-drill:questionType', 'listening-drill:answers', 'listening-drill:result'];
+const KEYS = ['listening-drill:sectionId', 'listening-drill:questionType', 'listening-drill:answers', 'listening-drill:result'];
 
 export default function LearnListeningPage() {
+  const [sectionId, setSectionId] = usePersistedState('listening-drill:sectionId', null);
   const [section, setSection] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [questionType, setQuestionType] = usePersistedState('listening-drill:questionType', null);
@@ -25,11 +27,13 @@ export default function LearnListeningPage() {
   const [result, setResult] = usePersistedState('listening-drill:result', null);
 
   useEffect(() => {
-    fetchListeningSections()
-      .then((sections) => sections[0] && fetchListeningSection(sections[0].id))
-      .then((s) => s && setSection(s))
+    if (!sectionId) return;
+    setSection(null);
+    setLoadError(null);
+    fetchListeningSection(sectionId)
+      .then(setSection)
       .catch((err) => setLoadError(err.message));
-  }, []);
+  }, [sectionId]);
 
   const availableTypes = section
     ? [...new Set(section.questions.map((q) => q.type))].map((value) => ({ value, ...TYPE_LABELS[value] }))
@@ -54,12 +58,24 @@ export default function LearnListeningPage() {
     }
   }
 
-  function handleChooseAnother() {
+  function handleChooseAnotherSection() {
     KEYS.forEach(clearPersistedState);
+    setSectionId(null);
+    setSection(null);
     setQuestionType(null);
     setAnswers({});
     setSubmitError(null);
     setResult(null);
+  }
+
+  function handleChooseAnotherType() {
+    setQuestionType(null);
+    setAnswers({});
+    setSubmitError(null);
+    setResult(null);
+    clearPersistedState('listening-drill:questionType');
+    clearPersistedState('listening-drill:answers');
+    clearPersistedState('listening-drill:result');
   }
 
   return (
@@ -75,14 +91,21 @@ export default function LearnListeningPage() {
         <Link to="/practice#drill-mode" className="btn-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back to Drill Mode
         </Link>
-        {questionType && (
-          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
+        {section && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnotherSection}>
+            Choose a different section
+          </button>
+        )}
+        {section && questionType && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnotherType}>
             Choose a different question type
           </button>
         )}
       </div>
 
       {loadError && <div className="error-banner">{loadError}</div>}
+
+      {!sectionId && <SectionPicker onSelect={setSectionId} />}
 
       {section && !questionType && !result && (
         <QuestionTypePicker types={availableTypes} onSelect={setQuestionType} />

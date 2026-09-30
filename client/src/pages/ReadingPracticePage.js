@@ -1,71 +1,19 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { fetchReadingPassage, submitReadingAttempt } from '../api/reading';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import PassagePicker from '../components/reading/PassagePicker';
-import PassageViewer from '../components/reading/PassageViewer';
-import ReadingResultsView from '../components/ReadingResultsView';
-
-const KEYS = [
-  'reading-practice:step',
-  'reading-practice:passageId',
-  'reading-practice:answers',
-  'reading-practice:result',
-  'reading-practice:timerEnabled',
-  'reading-practice:timer',
-];
+import ContinuousReadingTest from '../components/reading/ContinuousReadingTest';
+import SinglePassagePractice from '../components/reading/SinglePassagePractice';
+import ReadingFullTestResultsView from '../components/ReadingFullTestResultsView';
 
 export default function ReadingPracticePage() {
   useDocumentTitle('Reading Practice');
-  const [step, setStep] = usePersistedState('reading-practice:step', 'pick');
-  const [passageId, setPassageId] = usePersistedState('reading-practice:passageId', null);
-  const [passage, setPassage] = useState(null);
-  const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = usePersistedState('reading-practice:answers', {});
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
+  const [mode, setMode] = usePersistedState('reading-practice:mode', null);
   const [result, setResult] = usePersistedState('reading-practice:result', null);
 
-  useEffect(() => {
-    if (!passageId) return;
-    setPassage(null);
-    setLoadError(null);
-    fetchReadingPassage(passageId)
-      .then((p) => {
-        setPassage(p);
-        setStep('passage');
-      })
-      .catch((err) => setLoadError(err.message));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [passageId]);
-
-  function handleAnswerChange(questionId, value) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  }
-
-  async function handleSubmit() {
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      const data = await submitReadingAttempt(passageId, answers);
-      setResult(data);
-    } catch (err) {
-      setSubmitError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function handleChooseAnother() {
-    KEYS.forEach(clearPersistedState);
-    setPassageId(null);
-    setPassage(null);
-    setStep('pick');
-    setAnswers({});
-    setSubmitError(null);
-    setResult(null);
+  function handleChangeMode() {
+    clearPersistedState('reading-practice:mode');
+    setMode(null);
   }
 
   return (
@@ -73,8 +21,8 @@ export default function ReadingPracticePage() {
       <header className="app-header">
         <h1>Reading Practice</h1>
         <p className="app-subtitle">
-          Read a passage and answer Multiple Choice, True/False/Not Given, and Short
-          Answer questions, just like the real IELTS Reading test.
+          Read a passage and answer Multiple Choice, True/False/Not Given, Yes/No/Not Given, and
+          Short Answer questions, just like the real IELTS Reading test.
         </p>
       </header>
 
@@ -82,30 +30,40 @@ export default function ReadingPracticePage() {
         <Link to="/practice" className="btn-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
         </Link>
-        {passage && (
-          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-            Choose a different passage
+        {mode && !result && (
+          <button type="button" className="btn-secondary" onClick={handleChangeMode}>
+            Change practice mode
           </button>
         )}
       </div>
 
-      {loadError && <div className="error-banner">{loadError}</div>}
-
-      {step === 'pick' && !result && <PassagePicker onSelect={setPassageId} />}
-
-      {passage && step === 'passage' && !result && (
-        <PassageViewer
-          passage={passage}
-          answers={answers}
-          onAnswerChange={handleAnswerChange}
-          onSubmit={handleSubmit}
-          submitting={submitting}
-          persistKey="reading-practice"
-        />
+      {!mode && !result && (
+        <div className="topic-picker">
+          <h2>How would you like to practice?</h2>
+          <div className="topic-grid">
+            <button type="button" className="topic-card" onClick={() => setMode('full-test')}>
+              <span className="topic-card-title">Full Reading Test</span>
+              <p className="hub-card-description">
+                All passages in one continuous 60-minute sitting, just like the real test.
+              </p>
+            </button>
+            <button type="button" className="topic-card" onClick={() => setMode('single')}>
+              <span className="topic-card-title">Choose a Single Passage</span>
+              <p className="hub-card-description">
+                Pick one passage to focus on, with its own optional, pausable timer.
+              </p>
+            </button>
+          </div>
+        </div>
       )}
 
-      {submitError && <div className="error-banner">{submitError}</div>}
-      {result && <ReadingResultsView result={result} />}
+      {mode === 'full-test' && !result && (
+        <ContinuousReadingTest persistPrefix="reading-practice" onComplete={setResult} />
+      )}
+
+      {mode === 'single' && <SinglePassagePractice />}
+
+      {result && <ReadingFullTestResultsView result={result} />}
     </div>
   );
 }

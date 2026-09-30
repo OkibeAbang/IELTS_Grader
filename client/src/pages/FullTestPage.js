@@ -2,15 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { startFullTest, finalizeFullTest } from '../api/fullTest';
-import { fetchListeningSection, submitListeningAttempt, fetchListeningAttemptDetail } from '../api/listening';
-import { fetchReadingPassage, submitReadingAttempt, fetchReadingAttemptDetail } from '../api/reading';
+import { fetchListeningAttemptDetail } from '../api/listening';
+import { fetchReadingAttemptDetail } from '../api/reading';
 import { gradeEssay, fetchEssayAttemptDetail } from '../api/writing';
 import { fetchSpeakingTopic, submitSpeakingAttempt, fetchAttemptDetail } from '../api/speaking';
 import usePersistedState, { clearPersistedState, getPersistedValue } from '../hooks/usePersistedState';
-import usePersistedCountdown, { formatCountdown } from '../hooks/usePersistedCountdown';
-import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
-import QuestionInput from '../components/QuestionInput';
-import PassageViewer from '../components/reading/PassageViewer';
+import ContinuousListeningTest from '../components/listening/ContinuousListeningTest';
+import ContinuousReadingTest from '../components/reading/ContinuousReadingTest';
 import FullTestEssayStep from '../components/FullTestEssayStep';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import Part1Conversation from '../components/speaking/Part1Conversation';
@@ -32,10 +30,19 @@ const FULL_TEST_KEYS = [
   'full-test:writingTask2AttemptId',
   'full-test:speakingAttemptId',
   'full-test:resultsData',
-  'full-test-listening:answers',
-  'full-test-listening:timer',
-  'full-test-reading:answers',
-  'full-test-reading:timer',
+  'full-test-listening-continuous:currentIndex',
+  'full-test-listening-continuous:answersBySectionId',
+  // Timer keys are safe to clear here (unlike a mid-session "Restart"
+  // button) because this runs in handleStart(), before either continuous
+  // test component has mounted for this attempt — nothing has an
+  // in-memory snapshot yet to go stale. Needed anyway: usePersistedCountdown
+  // resumes a "paused" timer from wherever it was left, so without this a
+  // second Full Test attempt in the same browser session would inherit the
+  // first attempt's leftover elapsed time instead of a fresh 30/60 minutes.
+  'full-test-listening-continuous:timer',
+  'full-test-reading-continuous:currentIndex',
+  'full-test-reading-continuous:answersByPassageId',
+  'full-test-reading-continuous:timer',
   'full-test-writing-task1:essay',
   'full-test-writing-task1:timer',
   'full-test-writing-task2:essay',
@@ -43,93 +50,6 @@ const FULL_TEST_KEYS = [
   'full-test-speaking:recordings',
 ];
 
-function ListeningStep({ sectionId, onSubmit, submitting }) {
-  const [section, setSection] = useState(null);
-  const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = usePersistedState('full-test-listening:answers', {});
-  const countdown = usePersistedCountdown('full-test-listening:timer', 30 * 60, () => onSubmit(answers));
-
-  useEffect(() => {
-    fetchListeningSection(sectionId).then(setSection).catch((err) => setLoadError(err.message));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionId]);
-
-  useEffect(() => {
-    if (section) countdown.start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section]);
-
-  function handleAnswerChange(questionId, value) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  }
-
-  if (loadError) return <div className="error-banner">{loadError}</div>;
-  if (!section) return <p className="auth-loading">Loading listening section…</p>;
-
-  return (
-    <div className="listening-layout">
-      <div className="timer">
-        <span className={countdown.secondsLeft === 0 ? 'timer-expired' : ''}>
-          {formatCountdown(countdown.secondsLeft)}
-        </span>
-      </div>
-      <AudioScriptPlayer key={section.id} sectionId={section.id} />
-      <div className="reading-questions-col">
-        {section.questions.map((q, i) => (
-          <div key={q.id} className="reading-question">
-            <p className="reading-question-prompt">{i + 1}. {q.prompt}</p>
-            <QuestionInput question={q} value={answers[q.id]} onChange={handleAnswerChange} />
-          </div>
-        ))}
-        <button type="button" className="submit-btn" onClick={() => onSubmit(answers)} disabled={submitting}>
-          {submitting ? 'Scoring…' : 'Submit & continue'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ReadingStep({ passageId, onSubmit, submitting }) {
-  const [passage, setPassage] = useState(null);
-  const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = usePersistedState('full-test-reading:answers', {});
-  const countdown = usePersistedCountdown('full-test-reading:timer', 60 * 60, () => onSubmit(answers));
-
-  useEffect(() => {
-    fetchReadingPassage(passageId).then(setPassage).catch((err) => setLoadError(err.message));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [passageId]);
-
-  useEffect(() => {
-    if (passage) countdown.start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [passage]);
-
-  function handleAnswerChange(questionId, value) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  }
-
-  if (loadError) return <div className="error-banner">{loadError}</div>;
-  if (!passage) return <p className="auth-loading">Loading reading passage…</p>;
-
-  return (
-    <div>
-      <div className="timer">
-        <span className={countdown.secondsLeft === 0 ? 'timer-expired' : ''}>
-          {formatCountdown(countdown.secondsLeft)}
-        </span>
-      </div>
-      <PassageViewer
-        passage={passage}
-        answers={answers}
-        onAnswerChange={handleAnswerChange}
-        onSubmit={() => onSubmit(answers)}
-        submitting={submitting}
-        showTimer={false}
-      />
-    </div>
-  );
-}
 
 function SpeakingSteps({ topicId, step, setStep, onFinalSubmit, submitting }) {
   const [topic, setTopic] = useState(null);
@@ -216,32 +136,18 @@ export default function FullTestPage() {
     }
   }
 
-  async function handleListeningSubmit(answers) {
-    setSectionSubmitting(true);
-    setSectionError(null);
-    try {
-      const data = await submitListeningAttempt(assignment.listeningSectionId, answers);
-      setListeningAttemptId(data.attemptId);
-      setStep('reading');
-    } catch (err) {
-      setSectionError(err.message);
-    } finally {
-      setSectionSubmitting(false);
-    }
+  // ContinuousListeningTest/ContinuousReadingTest handle their own
+  // submission and loading state internally (same continuous-test flow as
+  // the standalone practice pages) — this just receives the finished
+  // result and advances to the next Full Test step.
+  function handleListeningSubmit(result) {
+    setListeningAttemptId(result.attemptId);
+    setStep('reading');
   }
 
-  async function handleReadingSubmit(answers) {
-    setSectionSubmitting(true);
-    setSectionError(null);
-    try {
-      const data = await submitReadingAttempt(assignment.readingPassageId, answers);
-      setReadingAttemptId(data.attemptId);
-      setStep('writing-task1');
-    } catch (err) {
-      setSectionError(err.message);
-    } finally {
-      setSectionSubmitting(false);
-    }
+  function handleReadingSubmit(result) {
+    setReadingAttemptId(result.attemptId);
+    setStep('writing-task1');
   }
 
   // Essay text is already persisted (FullTestEssayStep saves it on every
@@ -373,11 +279,21 @@ export default function FullTestPage() {
       {sectionError && <div className="error-banner">{sectionError}</div>}
 
       {step === 'listening' && assignment && (
-        <ListeningStep sectionId={assignment.listeningSectionId} onSubmit={handleListeningSubmit} submitting={sectionSubmitting} />
+        <ContinuousListeningTest
+          persistPrefix="full-test-listening-continuous"
+          onComplete={handleListeningSubmit}
+          allowRestart={false}
+          allowTimerControl={false}
+        />
       )}
 
       {step === 'reading' && assignment && (
-        <ReadingStep passageId={assignment.readingPassageId} onSubmit={handleReadingSubmit} submitting={sectionSubmitting} />
+        <ContinuousReadingTest
+          persistPrefix="full-test-reading-continuous"
+          onComplete={handleReadingSubmit}
+          allowRestart={false}
+          allowTimerControl={false}
+        />
       )}
 
       {step === 'writing-task1' && assignment && (

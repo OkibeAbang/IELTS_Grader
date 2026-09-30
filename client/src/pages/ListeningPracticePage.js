@@ -1,65 +1,19 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { fetchListeningSection, submitListeningAttempt } from '../api/listening';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import useDocumentTitle from '../hooks/useDocumentTitle';
-import SectionPicker from '../components/listening/SectionPicker';
-import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
-import QuestionInput from '../components/QuestionInput';
-import ListeningResultsView from '../components/ListeningResultsView';
-
-const KEYS = ['listening-practice:step', 'listening-practice:sectionId', 'listening-practice:answers', 'listening-practice:result'];
+import ContinuousListeningTest from '../components/listening/ContinuousListeningTest';
+import SingleSectionPractice from '../components/listening/SingleSectionPractice';
+import ListeningFullTestResultsView from '../components/ListeningFullTestResultsView';
 
 export default function ListeningPracticePage() {
   useDocumentTitle('Listening Practice');
-  const [step, setStep] = usePersistedState('listening-practice:step', 'pick');
-  const [sectionId, setSectionId] = usePersistedState('listening-practice:sectionId', null);
-  const [section, setSection] = useState(null);
-  const [loadError, setLoadError] = useState(null);
-  const [answers, setAnswers] = usePersistedState('listening-practice:answers', {});
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
+  const [mode, setMode] = usePersistedState('listening-practice:mode', null);
   const [result, setResult] = usePersistedState('listening-practice:result', null);
 
-  useEffect(() => {
-    if (!sectionId) return;
-    setSection(null);
-    setLoadError(null);
-    fetchListeningSection(sectionId)
-      .then((s) => {
-        setSection(s);
-        setStep('section');
-      })
-      .catch((err) => setLoadError(err.message));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionId]);
-
-  function handleAnswerChange(questionId, value) {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  }
-
-  async function handleSubmit() {
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      const data = await submitListeningAttempt(sectionId, answers);
-      setResult(data);
-    } catch (err) {
-      setSubmitError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function handleChooseAnother() {
-    KEYS.forEach(clearPersistedState);
-    setSectionId(null);
-    setSection(null);
-    setStep('pick');
-    setAnswers({});
-    setSubmitError(null);
-    setResult(null);
+  function handleChangeMode() {
+    clearPersistedState('listening-practice:mode');
+    setMode(null);
   }
 
   return (
@@ -67,8 +21,8 @@ export default function ListeningPracticePage() {
       <header className="app-header">
         <h1>Listening Practice</h1>
         <p className="app-subtitle">
-          Listen to a short recording and answer Multiple Choice and Note/Form Completion
-          questions, just like the real IELTS Listening test.
+          Listen to a short recording and answer Multiple Choice and Short Answer questions, just
+          like the real IELTS Listening test.
         </p>
       </header>
 
@@ -76,40 +30,40 @@ export default function ListeningPracticePage() {
         <Link to="/practice" className="btn-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
         </Link>
-        {section && (
-          <button type="button" className="btn-secondary" onClick={handleChooseAnother}>
-            Choose a different section
+        {mode && !result && (
+          <button type="button" className="btn-secondary" onClick={handleChangeMode}>
+            Change practice mode
           </button>
         )}
       </div>
 
-      {loadError && <div className="error-banner">{loadError}</div>}
-
-      {step === 'pick' && !result && <SectionPicker onSelect={setSectionId} />}
-
-      {section && step === 'section' && !result && (
-        <div className="listening-layout">
-          <AudioScriptPlayer key={section.id} sectionId={section.id} />
-
-          <div className="reading-questions-col">
-            {section.questions.map((q, i) => (
-              <div key={q.id} className="reading-question">
-                <p className="reading-question-prompt">
-                  {i + 1}. {q.prompt}
-                </p>
-                <QuestionInput question={q} value={answers[q.id]} onChange={handleAnswerChange} />
-              </div>
-            ))}
-
-            <button type="button" className="submit-btn" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? 'Scoring…' : 'Submit answers'}
+      {!mode && !result && (
+        <div className="topic-picker">
+          <h2>How would you like to practice?</h2>
+          <div className="topic-grid">
+            <button type="button" className="topic-card" onClick={() => setMode('full-test')}>
+              <span className="topic-card-title">Full Listening Test</span>
+              <p className="hub-card-description">
+                All available parts in one continuous sitting, just like the real test.
+              </p>
+            </button>
+            <button type="button" className="topic-card" onClick={() => setMode('single')}>
+              <span className="topic-card-title">Choose a Single Part</span>
+              <p className="hub-card-description">
+                Pick one part to focus on, without committing to the whole test.
+              </p>
             </button>
           </div>
         </div>
       )}
 
-      {submitError && <div className="error-banner">{submitError}</div>}
-      {result && <ListeningResultsView result={result} />}
+      {mode === 'full-test' && !result && (
+        <ContinuousListeningTest persistPrefix="listening-practice" onComplete={setResult} />
+      )}
+
+      {mode === 'single' && <SingleSectionPractice />}
+
+      {result && <ListeningFullTestResultsView result={result} />}
     </div>
   );
 }

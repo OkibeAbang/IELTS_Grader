@@ -1,6 +1,6 @@
 import express from "express";
 import { getReadingPassageBank, getReadingPassage } from "../readingPassageBank.js";
-import { scoreReadingAttempt, scoreReadingDrill } from "../scoreReading.js";
+import { scoreReadingAttempt, scoreReadingDrill, scoreReadingFullTest } from "../scoreReading.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/readingAttempts.js";
 
@@ -44,6 +44,40 @@ router.post("/attempts", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Passage not found" });
     }
     console.error("Reading scoring failed:", err);
+    res.status(502).json({ error: "Scoring failed. Please try again." });
+  }
+});
+
+// Real IELTS Reading: 3 passages, one continuous 60-minute sitting, one
+// combined score — not a single passage in isolation. Reuses the existing
+// reading_attempts table (mode: "full_reading_test") rather than a new
+// table: passage_id/passage_title just carry a summary of the whole test
+// instead of a single passage, which the existing JSON blob columns
+// (answers_json, raw_result_json) already accommodate without a migration.
+router.post("/attempts/full-test", requireAuth, async (req, res) => {
+  const { answersByPassageId } = req.body ?? {};
+
+  if (typeof answersByPassageId !== "object" || answersByPassageId === null) {
+    return res.status(400).json({ error: "answersByPassageId must be an object" });
+  }
+
+  try {
+    const result = scoreReadingFullTest({ answersByPassageId });
+    const passageCount = result.passageResults.length;
+    const attempt = await createAttempt({
+      userId: req.user.id,
+      passageId: JSON.stringify(result.passageResults.map((p) => p.passageId)),
+      passageTitle: `Full Reading Test (${passageCount} passage${passageCount === 1 ? "" : "s"})`,
+      mode: "full_reading_test",
+      answers: answersByPassageId,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      overallBand: result.overallBand,
+      rawResult: result,
+    });
+    res.status(201).json({ ...result, attemptId: attempt.id });
+  } catch (err) {
+    console.error("Reading full-test scoring failed:", err);
     res.status(502).json({ error: "Scoring failed. Please try again." });
   }
 });

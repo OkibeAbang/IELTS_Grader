@@ -18,10 +18,11 @@ export default function QuestionInput({ question, value, onChange }) {
     );
   }
 
-  if (question.type === 'true_false_not_given') {
+  if (question.type === 'true_false_not_given' || question.type === 'yes_no_not_given') {
+    const options = question.type === 'yes_no_not_given' ? ['YES', 'NO', 'NOT GIVEN'] : ['TRUE', 'FALSE', 'NOT GIVEN'];
     return (
       <div className="reading-question-options">
-        {['TRUE', 'FALSE', 'NOT GIVEN'].map((opt) => (
+        {options.map((opt) => (
           <label key={opt} className="reading-question-option">
             <input
               type="radio"
