@@ -55,14 +55,17 @@ router.post("/attempts", requireAuth, async (req, res) => {
 // instead of a single passage, which the existing JSON blob columns
 // (answers_json, raw_result_json) already accommodate without a migration.
 router.post("/attempts/full-test", requireAuth, async (req, res) => {
-  const { answersByPassageId } = req.body ?? {};
+  const { answersByPassageId, passageIds } = req.body ?? {};
 
   if (typeof answersByPassageId !== "object" || answersByPassageId === null) {
     return res.status(400).json({ error: "answersByPassageId must be an object" });
   }
+  if (passageIds !== undefined && !Array.isArray(passageIds)) {
+    return res.status(400).json({ error: "passageIds must be an array when provided" });
+  }
 
   try {
-    const result = scoreReadingFullTest({ answersByPassageId });
+    const result = scoreReadingFullTest({ answersByPassageId, passageIds });
     const passageCount = result.passageResults.length;
     const attempt = await createAttempt({
       userId: req.user.id,
@@ -77,6 +80,9 @@ router.post("/attempts/full-test", requireAuth, async (req, res) => {
     });
     res.status(201).json({ ...result, attemptId: attempt.id });
   } catch (err) {
+    if (err.code === "PASSAGE_NOT_FOUND") {
+      return res.status(404).json({ error: "Passage not found" });
+    }
     console.error("Reading full-test scoring failed:", err);
     res.status(502).json({ error: "Scoring failed. Please try again." });
   }

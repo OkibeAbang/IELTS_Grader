@@ -42,6 +42,9 @@ const FULL_TEST_KEYS = [
   'full-test-listening-continuous:timer',
   'full-test-reading-continuous:currentIndex',
   'full-test-reading-continuous:answersByPassageId',
+  // Cleared so each new Full Test re-rolls its random passage selection
+  // instead of inheriting the previous attempt's assignment.
+  'full-test-reading-continuous:assignedPassageIds',
   'full-test-reading-continuous:timer',
   'full-test-writing-task1:essay',
   'full-test-writing-task1:timer',
@@ -281,6 +284,7 @@ export default function FullTestPage() {
       {step === 'listening' && assignment && (
         <ContinuousListeningTest
           persistPrefix="full-test-listening-continuous"
+          test={assignment.listeningTest}
           onComplete={handleListeningSubmit}
           allowRestart={false}
           allowTimerControl={false}

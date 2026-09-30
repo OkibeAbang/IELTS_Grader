@@ -1,4 +1,5 @@
 import { Check, X } from 'lucide-react';
+import formatUserAnswer from '../utils/formatAnswer';
 
 export default function ReadingResultsView({ result }) {
   const { correctCount, totalQuestions, overallBand, questionResults } = result;
@@ -20,7 +21,7 @@ export default function ReadingResultsView({ result }) {
             <p className="reading-question-prompt">
               {i + 1}. {q.prompt}
             </p>
-            <p>Your answer: <strong>{q.userAnswer || '—'}</strong></p>
+            <p>Your answer: <strong>{formatUserAnswer(q.userAnswer)}</strong></p>
             {!q.isCorrect && <p>Correct answer: <strong>{q.correctAnswer}</strong></p>}
             <span>
               {q.isCorrect ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}{' '}

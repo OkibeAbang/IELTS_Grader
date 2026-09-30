@@ -12,6 +12,7 @@ import ListeningResultsView from '../components/ListeningResultsView';
 const TYPE_LABELS = {
   multiple_choice: { label: 'Multiple Choice', description: 'Pick the correct option' },
   short_answer: { label: 'Short Answer', description: 'Form/note completion' },
+  multiple_select: { label: 'Multiple Select', description: 'Choose more than one correct option' },
 };
 
 const KEYS = ['listening-drill:sectionId', 'listening-drill:questionType', 'listening-drill:answers', 'listening-drill:result'];

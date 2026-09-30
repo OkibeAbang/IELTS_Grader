@@ -1,5 +1,5 @@
 import express from "express";
-import { getListeningSectionBank, getListeningSection } from "../listeningPassageBank.js";
+import { getListeningSectionBank, getListeningTestBank, getListeningSection } from "../listeningPassageBank.js";
 import { scoreListeningAttempt, scoreListeningDrill, scoreListeningFullTest } from "../scoreListening.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/listeningAttempts.js";
@@ -9,6 +9,12 @@ const router = express.Router();
 
 router.get("/sections", (_req, res) => {
   res.json({ sections: getListeningSectionBank() });
+});
+
+// Complete tests (one test = its Parts 1-4), for the "choose a test"
+// picker on the Listening practice page.
+router.get("/tests", (_req, res) => {
+  res.json({ tests: getListeningTestBank() });
 });
 
 router.get("/sections/:id", (req, res) => {
@@ -74,19 +80,24 @@ router.post("/attempts", requireAuth, async (req, res) => {
 // mode value, JSON blob columns absorb the multi-section shape without a
 // migration.
 router.post("/attempts/full-test", requireAuth, async (req, res) => {
-  const { answersBySectionId } = req.body ?? {};
+  const { answersBySectionId, sectionIds, testNumber } = req.body ?? {};
 
   if (typeof answersBySectionId !== "object" || answersBySectionId === null) {
     return res.status(400).json({ error: "answersBySectionId must be an object" });
   }
+  if (sectionIds !== undefined && !Array.isArray(sectionIds)) {
+    return res.status(400).json({ error: "sectionIds must be an array when provided" });
+  }
 
   try {
-    const result = scoreListeningFullTest({ answersBySectionId });
+    const result = scoreListeningFullTest({ answersBySectionId, sectionIds });
     const sectionCount = result.sectionResults.length;
     const attempt = await createAttempt({
       userId: req.user.id,
       sectionId: JSON.stringify(result.sectionResults.map((s) => s.sectionId)),
-      sectionTitle: `Full Listening Test (${sectionCount} part${sectionCount === 1 ? "" : "s"})`,
+      sectionTitle: Number.isFinite(Number(testNumber))
+        ? `Listening Test ${Number(testNumber)} (${sectionCount} part${sectionCount === 1 ? "" : "s"})`
+        : `Full Listening Test (${sectionCount} part${sectionCount === 1 ? "" : "s"})`,
       mode: "full_listening_test",
       answers: answersBySectionId,
       correctCount: result.correctCount,
@@ -96,6 +107,9 @@ router.post("/attempts/full-test", requireAuth, async (req, res) => {
     });
     res.status(201).json({ ...result, attemptId: attempt.id });
   } catch (err) {
+    if (err.code === "SECTION_NOT_FOUND") {
+      return res.status(404).json({ error: "Section not found" });
+    }
     console.error("Listening full-test scoring failed:", err);
     res.status(502).json({ error: "Scoring failed. Please try again." });
   }

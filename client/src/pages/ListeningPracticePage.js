@@ -2,18 +2,32 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
 import useDocumentTitle from '../hooks/useDocumentTitle';
+import ListeningTestPicker from '../components/listening/ListeningTestPicker';
 import ContinuousListeningTest from '../components/listening/ContinuousListeningTest';
-import SingleSectionPractice from '../components/listening/SingleSectionPractice';
 import ListeningFullTestResultsView from '../components/ListeningFullTestResultsView';
+
+// Everything this page and ContinuousListeningTest persist. The timer key
+// belongs here too — without it, starting another test resumes the previous
+// sitting's clock instead of a fresh 30 minutes. Safe to clear directly
+// because ContinuousListeningTest unmounts as soon as the test is cleared,
+// so no mounted countdown hook is left holding stale in-memory state.
+const KEYS = [
+  'listening-practice:test',
+  'listening-practice:result',
+  'listening-practice:currentIndex',
+  'listening-practice:answersBySectionId',
+  'listening-practice:timer',
+];
 
 export default function ListeningPracticePage() {
   useDocumentTitle('Listening Practice');
-  const [mode, setMode] = usePersistedState('listening-practice:mode', null);
+  const [test, setTest] = usePersistedState('listening-practice:test', null);
   const [result, setResult] = usePersistedState('listening-practice:result', null);
 
-  function handleChangeMode() {
-    clearPersistedState('listening-practice:mode');
-    setMode(null);
+  function handleChooseAnotherTest() {
+    KEYS.forEach(clearPersistedState);
+    setTest(null);
+    setResult(null);
   }
 
   return (
@@ -21,8 +35,8 @@ export default function ListeningPracticePage() {
       <header className="app-header">
         <h1>Listening Practice</h1>
         <p className="app-subtitle">
-          Listen to a short recording and answer Multiple Choice and Short Answer questions, just
-          like the real IELTS Listening test.
+          Listen and answer Multiple Choice and Short Answer questions, just like the real IELTS
+          Listening test.
         </p>
       </header>
 
@@ -30,40 +44,31 @@ export default function ListeningPracticePage() {
         <Link to="/practice" className="btn-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
         </Link>
-        {mode && !result && (
-          <button type="button" className="btn-secondary" onClick={handleChangeMode}>
-            Change practice mode
+        {test && (
+          <button type="button" className="btn-secondary" onClick={handleChooseAnotherTest}>
+            {result ? 'Start a new test' : 'Choose a different test'}
           </button>
         )}
       </div>
 
-      {!mode && !result && (
-        <div className="topic-picker">
-          <h2>How would you like to practice?</h2>
-          <div className="topic-grid">
-            <button type="button" className="topic-card" onClick={() => setMode('full-test')}>
-              <span className="topic-card-title">Full Listening Test</span>
-              <p className="hub-card-description">
-                All available parts in one continuous sitting, just like the real test.
-              </p>
-            </button>
-            <button type="button" className="topic-card" onClick={() => setMode('single')}>
-              <span className="topic-card-title">Choose a Single Part</span>
-              <p className="hub-card-description">
-                Pick one part to focus on, without committing to the whole test.
-              </p>
-            </button>
-          </div>
-        </div>
+      {!test && !result && <ListeningTestPicker onSelect={setTest} />}
+
+      {test && !result && (
+        <ContinuousListeningTest
+          persistPrefix="listening-practice"
+          test={test}
+          onComplete={setResult}
+        />
       )}
 
-      {mode === 'full-test' && !result && (
-        <ContinuousListeningTest persistPrefix="listening-practice" onComplete={setResult} />
+      {result && (
+        <>
+          <ListeningFullTestResultsView result={result} />
+          <button type="button" className="submit-btn" onClick={handleChooseAnotherTest}>
+            Start a new test
+          </button>
+        </>
       )}
-
-      {mode === 'single' && <SingleSectionPractice />}
-
-      {result && <ListeningFullTestResultsView result={result} />}
     </div>
   );
 }

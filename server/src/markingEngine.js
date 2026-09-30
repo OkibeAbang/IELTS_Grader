@@ -155,7 +155,25 @@ function buildAcceptedAnswerSet(question) {
   return expanded;
 }
 
+// Multi-select MC ("Choose TWO letters") is the one type whose answer is a
+// set rather than a single value, so it's checked before the single-value
+// branches below rather than falling through normalize(), which would
+// stringify an array into something like "b,d" and never match anything.
+// Exact set match, same as the real exam — no credit for a partial subset,
+// and a submission with the wrong number of picks can't accidentally match.
+function isMultipleSelectCorrect(question, userAnswer) {
+  const submitted = Array.isArray(userAnswer) ? userAnswer.map(normalize) : [];
+  const correct = (question.correctAnswers ?? []).map(normalize);
+  if (submitted.length === 0 || submitted.length !== correct.length) return false;
+  const correctSet = new Set(correct);
+  const submittedSet = new Set(submitted);
+  if (submittedSet.size !== submitted.length) return false; // duplicate picks
+  return submitted.every((a) => correctSet.has(a)) && submittedSet.size === correctSet.size;
+}
+
 function isCorrect(question, userAnswer) {
+  if (question.type === "multiple_select") return isMultipleSelectCorrect(question, userAnswer);
+
   const norm = normalize(userAnswer);
   if (!norm) return false;
 
@@ -171,4 +189,23 @@ function isCorrect(question, userAnswer) {
   return normalize(question.correctAnswer) === norm;
 }
 
-export { normalize, countWords, parseMaxWords, isCorrect };
+// Shared by scoreReading.js and scoreListening.js — was previously
+// duplicated verbatim in both. correctAnswer here is always the string
+// meant for display in a results view; multiple_select has no single
+// correctAnswer field (it has correctAnswers, plural), so it's joined for
+// display purposes only.
+function scoreQuestions(questions, answers) {
+  return questions.map((q) => {
+    const userAnswer = answers?.[q.id] ?? (q.type === "multiple_select" ? [] : "");
+    return {
+      id: q.id,
+      type: q.type,
+      prompt: q.prompt,
+      userAnswer,
+      correctAnswer: q.type === "multiple_select" ? q.correctAnswers.join(", ") : q.correctAnswer,
+      isCorrect: isCorrect(q, userAnswer),
+    };
+  });
+}
+
+export { normalize, countWords, parseMaxWords, isCorrect, scoreQuestions };

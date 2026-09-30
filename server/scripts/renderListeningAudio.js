@@ -4,15 +4,20 @@ import { generateListeningAudioBuffer } from "../src/listeningAudio.js";
 import { saveListeningAudio } from "../src/audioStorage.js";
 
 /**
- * One-off content-authoring step, not a runtime operation: renders every
- * listening section's audio once with Gemini TTS and stores it (R2 in
- * production, local disk in dev — see audioStorage.js). Run manually now,
- * and again whenever a section is added or its script text changes.
+ * One-off content-authoring step, not a runtime operation: renders
+ * listening section audio once with Gemini TTS and stores it (R2 in
+ * production, local disk in dev — see audioStorage.js). Run manually
+ * whenever a section is added or its script text changes.
  *
- *   npm run render-listening-audio
+ *   npm run render-listening-audio            # every section in the bank
+ *   npm run render-listening-audio -- ls-04 ls-05 ls-06   # only these ids
  */
 async function main() {
-  const sections = getListeningSectionBank();
+  const requestedIds = process.argv.slice(2);
+  const allSections = getListeningSectionBank();
+  const sections = requestedIds.length
+    ? allSections.filter((s) => requestedIds.includes(s.id))
+    : allSections;
   console.log(`Rendering audio for ${sections.length} listening section(s)...`);
 
   for (const { id, title } of sections) {

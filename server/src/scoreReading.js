@@ -1,20 +1,6 @@
 import { getReadingPassageWithAnswers, getAllReadingPassagesWithAnswers } from "./readingPassageBank.js";
 import { bandForScore } from "./bandConversionTable.js";
-import { isCorrect } from "./markingEngine.js";
-
-function scoreQuestions(questions, answers) {
-  return questions.map((q) => {
-    const userAnswer = answers?.[q.id] ?? "";
-    return {
-      id: q.id,
-      type: q.type,
-      prompt: q.prompt,
-      userAnswer,
-      correctAnswer: q.correctAnswer,
-      isCorrect: isCorrect(q, userAnswer),
-    };
-  });
-}
+import { scoreQuestions } from "./markingEngine.js";
 
 function scoreReadingAttempt({ passageId, answers }) {
   const passage = getReadingPassageWithAnswers(passageId);
@@ -38,12 +24,31 @@ function scoreReadingAttempt({ passageId, answers }) {
   };
 }
 
-// Scores every passage in the bank as one continuous test (real IELTS
-// Reading: 3 passages, one sitting, one combined score) rather than a
-// single passage in isolation. answersByPassageId is keyed by passage id,
-// each value the same {questionId: answer} shape scoreReadingAttempt takes.
-function scoreReadingFullTest({ answersByPassageId }) {
-  const passages = getAllReadingPassagesWithAnswers();
+// Scores one continuous test (real IELTS Reading: 3 passages, one sitting,
+// one combined score) rather than a single passage in isolation.
+// answersByPassageId is keyed by passage id, each value the same
+// {questionId: answer} shape scoreReadingAttempt takes.
+//
+// passageIds is the set of passages actually assigned for this sitting —
+// required now that a test is a random selection from the bank rather than
+// "everything in it". Scoring the whole bank instead would count passages
+// the user was never shown as all-wrong, understating the band. Falls back
+// to the whole bank only when no ids are given.
+function scoreReadingFullTest({ answersByPassageId, passageIds }) {
+  const bank = getAllReadingPassagesWithAnswers();
+  let passages = bank;
+
+  if (Array.isArray(passageIds) && passageIds.length > 0) {
+    passages = passageIds.map((id) => {
+      const passage = bank.find((p) => p.id === id);
+      if (!passage) {
+        const err = new Error("Passage not found");
+        err.code = "PASSAGE_NOT_FOUND";
+        throw err;
+      }
+      return passage;
+    });
+  }
 
   const passageResults = passages.map((passage) => {
     const answers = answersByPassageId?.[passage.id] ?? {};

@@ -31,10 +31,10 @@ export async function deleteReadingAttempt(id) {
   await requestJson(`/api/reading/attempts/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-export async function submitReadingFullTest(answersByPassageId) {
+export async function submitReadingFullTest(answersByPassageId, passageIds) {
   return requestJson('/api/reading/attempts/full-test', {
     method: 'POST',
-    body: JSON.stringify({ answersByPassageId }),
+    body: JSON.stringify({ answersByPassageId, passageIds }),
   });
 }
 

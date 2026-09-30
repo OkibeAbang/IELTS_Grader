@@ -23,6 +23,7 @@ const QUESTION_TYPE_LABELS = {
   true_false_not_given: 'True/False/Not Given',
   yes_no_not_given: 'Yes/No/Not Given',
   short_answer: 'Short Answer',
+  multiple_select: 'Multiple Select',
 };
 
 const SPEAKING_PART_LABELS = {

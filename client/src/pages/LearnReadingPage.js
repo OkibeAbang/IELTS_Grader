@@ -13,6 +13,7 @@ const TYPE_LABELS = {
   true_false_not_given: { label: 'True / False / Not Given', description: 'Judge each factual statement' },
   yes_no_not_given: { label: 'Yes / No / Not Given', description: "Judge the writer's stated opinions" },
   short_answer: { label: 'Short Answer', description: 'Fill in the blank' },
+  multiple_select: { label: 'Multiple Select', description: 'Choose more than one correct option' },
 };
 
 const KEYS = ['reading-drill:passageId', 'reading-drill:questionType', 'reading-drill:answers', 'reading-drill:result'];

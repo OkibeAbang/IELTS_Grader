@@ -15,6 +15,10 @@ const QUESTION_TYPES = {
   // passages, Y/N/NG on argumentative ones).
   YES_NO_NOT_GIVEN: "yes_no_not_given",
   SHORT_ANSWER: "short_answer",
+  // "Choose TWO/THREE letters" — answer is a set (correctAnswers, plural,
+  // + chooseCount), not a single correctAnswer. See markingEngine.js's
+  // isMultipleSelectCorrect for how this is scored.
+  MULTIPLE_SELECT: "multiple_select",
 };
 
 const READING_PASSAGES = [
@@ -48,15 +52,17 @@ const READING_PASSAGES = [
     questions: [
       {
         id: "q1",
-        type: QUESTION_TYPES.MULTIPLE_CHOICE,
-        prompt: "According to paragraph A, why were beavers originally hunted to extinction in Britain?",
+        type: QUESTION_TYPES.MULTIPLE_SELECT,
+        prompt: "According to paragraph C, which TWO of the following benefits of beaver dams are mentioned?",
+        chooseCount: 2,
         options: [
-          { key: "A", text: "Their dams caused flooding of farmland" },
-          { key: "B", text: "They were valued for their fur, meat and castoreum" },
-          { key: "C", text: "They competed with livestock for grazing land" },
-          { key: "D", text: "They damaged commercial fishing stocks" },
+          { key: "A", text: "They reduce peak flood flows during major storms" },
+          { key: "B", text: "They completely remove the need for engineered flood defences" },
+          { key: "C", text: "They trap agricultural pollutants before they reach rivers downstream" },
+          { key: "D", text: "They increase the amount of water available for irrigation" },
+          { key: "E", text: "They reduce the cost of dredging rivers" },
         ],
-        correctAnswer: "B",
+        correctAnswers: ["A", "C"],
       },
       {
         id: "q2",
@@ -423,9 +429,411 @@ const READING_PASSAGES = [
       },
     ],
   },
+  {
+    id: "rp-04",
+    title: "The Rise of Vertical Farming",
+    part: 1,
+    estimatedMinutes: 20,
+    paragraphs: [
+      {
+        label: "A",
+        text: "As the world's urban population continues to grow, and the farmland available on the outskirts of major cities continues to shrink, a small but fast-growing industry has begun proposing an unusual solution: growing crops not outward across open fields but upward, inside stacked, climate-controlled buildings. Known as vertical farming, the approach typically houses crops on shelves rising many metres into the air within a warehouse or purpose-built tower, each layer supplied with its own irrigation, lighting and nutrient system. Unlike a conventional greenhouse, which still relies substantially on natural daylight and outdoor temperatures, a vertical farm is usually a fully sealed environment, with every variable — light intensity, humidity, carbon dioxide concentration, nutrient balance — controlled automatically by computer systems, an approach generally referred to as controlled-environment agriculture, or CEA.",
+      },
+      {
+        label: "B",
+        text: "The case for growing food this way rests largely on land and water efficiency. Because crops are stacked in layers rather than spread across a single horizontal plane, a vertical farm can produce, on some estimates, more than one hundred times the yield of an equivalent area of traditional farmland. Water use is reduced even more dramatically: most vertical farms use hydroponic or aeroponic systems, in which nutrient-rich water is either circulated past bare roots or misted directly onto them, rather than soaking into soil, cutting water consumption by up to 95 percent compared with open-field agriculture. Because the growing environment is entirely enclosed, pesticides become largely unnecessary too, since the usual outdoor pests and airborne plant diseases simply have no way of reaching the crop.",
+      },
+      {
+        label: "C",
+        text: "A further advantage, proponents argue, is proximity. Because vertical farms do not require open land, they can be built within or immediately alongside the cities whose populations they feed, sometimes in repurposed warehouses or disused industrial buildings. This drastically shortens the distance between harvest and plate; some operators claim their produce can reach a nearby supermarket shelf within hours of being picked, rather than the days or weeks typical of produce shipped from distant agricultural regions. Shorter supply chains of this kind are said to reduce both transport-related carbon emissions and the substantial proportion of fresh produce that is normally lost to spoilage in transit.",
+      },
+      {
+        label: "D",
+        text: "Despite this promise, the industry has faced real financial difficulties. Running a vertical farm is energy-intensive: because natural sunlight is largely or entirely absent, crops must be grown under artificial lighting, usually LED arrays tuned to the specific wavelengths plants use for photosynthesis, and this lighting, together with the climate-control systems, can account for the majority of a facility's operating costs. Several prominently funded vertical farming companies have collapsed or scaled back operations sharply in recent years after failing to bring these energy costs down to a level that could compete with conventional agriculture on price, particularly for lower-margin crops. As a result, the produce grown commercially in vertical farms today remains narrow: mostly leafy greens, herbs and salad crops, which grow quickly and command a high enough retail price to offset the cost of production, rather than staple crops such as wheat, rice or potatoes.",
+      },
+      {
+        label: "E",
+        text: "Researchers in the field generally argue that vertical farming is best understood not as a wholesale replacement for traditional agriculture, which will remain essential for producing the staple crops that supply most of the world's calories, but as a complementary technology suited to specific crops and specific locations, particularly dense cities with limited surrounding farmland or regions with especially harsh climates. Continued improvements in LED efficiency and renewable energy integration, several industry analysts suggest, may eventually narrow the cost gap enough for vertical farming to expand beyond its current niche, though most agree this remains a matter of years rather than months.",
+      },
+    ],
+    questions: [
+      {
+        id: "q1",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph A, what mainly distinguishes a vertical farm from a conventional greenhouse?",
+        options: [
+          { key: "A", text: "A vertical farm grows only leafy green crops" },
+          { key: "B", text: "A vertical farm is a fully sealed, computer-controlled environment" },
+          { key: "C", text: "A vertical farm relies more heavily on natural daylight" },
+          { key: "D", text: "A vertical farm must be built outside city limits" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q2",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "Why is water use significantly reduced in vertical farms, according to paragraph B?",
+        options: [
+          { key: "A", text: "Crops are watered manually rather than by machine" },
+          { key: "B", text: "Rainwater is collected and reused within the building" },
+          { key: "C", text: "Hydroponic and aeroponic systems deliver water directly to roots rather than soil" },
+          { key: "D", text: "Crops are grown for a shorter period than in open fields" },
+        ],
+        correctAnswer: "C",
+      },
+      {
+        id: "q3",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What advantage of vertical farming is discussed in paragraph C?",
+        options: [
+          { key: "A", text: "Lower labour costs than traditional farming" },
+          { key: "B", text: "Shorter distances between harvest and consumer" },
+          { key: "C", text: "A wider variety of crops than open-field farming" },
+          { key: "D", text: "Reduced need for artificial lighting" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q4",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph D, why do vertical farms mostly grow leafy greens and herbs rather than staple crops?",
+        options: [
+          { key: "A", text: "These crops grow quickly and are valuable enough to offset high energy costs" },
+          { key: "B", text: "Staple crops cannot survive under artificial lighting at all" },
+          { key: "C", text: "Consumers prefer leafy greens grown indoors" },
+          { key: "D", text: "Staple crops require more water than vertical farms can supply" },
+        ],
+        correctAnswer: "A",
+      },
+      {
+        id: "q5",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Vertical farms generally require the use of pesticides to protect crops from pests.",
+        correctAnswer: "FALSE",
+      },
+      {
+        id: "q6",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Some vertical farming companies have failed because energy costs made their produce too expensive to compete with conventional farming.",
+        correctAnswer: "TRUE",
+      },
+      {
+        id: "q7",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Every vertical farming company founded so far has been financially profitable.",
+        correctAnswer: "NOT GIVEN",
+      },
+      {
+        id: "q8",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Researchers generally believe vertical farming will completely replace traditional agriculture within a few years.",
+        correctAnswer: "FALSE",
+      },
+      {
+        id: "q9",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "What term is used in paragraph A for growing crops in a fully controlled indoor environment?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "controlled-environment agriculture",
+        acceptableAnswers: ["controlled-environment agriculture", "controlled environment agriculture", "CEA"],
+      },
+      {
+        id: "q10",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "By what percentage can water use be cut compared with open-field agriculture?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "95 percent",
+        acceptableAnswers: ["95 percent", "95%", "up to 95 percent", "95 per cent"],
+      },
+      {
+        id: "q11",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "What kind of lighting is typically used to grow crops in vertical farms?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "LED arrays",
+        acceptableAnswers: ["LED arrays", "LED", "LED lighting", "LEDs"],
+      },
+      {
+        id: "q12",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "According to paragraph E, what kind of locations is vertical farming considered particularly well suited to?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "dense cities",
+        acceptableAnswers: ["dense cities", "dense cities with limited surrounding farmland", "cities"],
+      },
+    ],
+  },
+  {
+    id: "rp-05",
+    title: "The Science of Sleep Debt",
+    part: 2,
+    estimatedMinutes: 20,
+    paragraphs: [
+      {
+        label: "A",
+        text: "Most adults require somewhere between seven and nine hours of sleep a night to function at their best, yet large-scale surveys in industrialised countries consistently find that a substantial proportion of adults — in some national surveys, more than a third — report averaging six hours or fewer on workdays. Sleep researchers use the term 'sleep debt' to describe the cumulative shortfall that builds up when a person sleeps less than their body requires over consecutive nights, and, crucially, they stress that this debt behaves less like an inconvenience to be shrugged off and more like a physiological deficit that continues to accumulate, with measurable consequences, until it is repaid.",
+      },
+      {
+        label: "B",
+        text: "The immediate effects of accumulated sleep debt are well documented and, to most people, unsurprising: slower reaction times, impaired concentration, and a diminished ability to regulate mood. Less widely appreciated is how severe these effects can become. Laboratory studies restricting participants to six hours of sleep a night for two consecutive weeks found that their cognitive performance on attention and reaction-time tasks declined to a level statistically indistinguishable from that of participants who had been kept completely awake for twenty-four hours — despite the six-hour group reporting that they felt only moderately tired, not severely impaired. This gap between subjective feeling and objective performance is, researchers argue, precisely what makes chronic mild sleep restriction so dangerous in contexts such as driving or operating machinery: the person experiencing the deficit consistently underestimates it.",
+      },
+      {
+        label: "C",
+        text: "Beyond cognition, a growing body of research has linked chronic sleep debt to longer-term health outcomes. Epidemiological studies tracking large cohorts over many years have found associations between habitually short sleep and elevated risks of obesity, type 2 diabetes, cardiovascular disease and weakened immune function. The proposed mechanisms vary: disrupted sleep appears to alter the balance of hormones that regulate appetite, increasing levels of the hormone that stimulates hunger while suppressing the one that signals fullness, which may partly explain the observed association with weight gain. Sleep is also understood to play a central role in immune regulation, and several controlled studies have found that sleep-deprived participants mount a measurably weaker antibody response to vaccination than well-rested participants given the identical vaccine.",
+      },
+      {
+        label: "D",
+        text: "A persistent question is whether sleep debt can genuinely be 'repaid' through catch-up sleep, such as sleeping considerably longer on weekends after a week of insufficient sleep. The evidence here is mixed. Some studies suggest that extended recovery sleep can reverse certain short-term cognitive impairments reasonably well, with attention and reaction times returning close to baseline after one or two nights of substantially longer sleep. However, other research indicates that some physiological effects, particularly those related to metabolic and hormonal regulation, do not appear to fully normalise after a single weekend of recovery sleep, even when overall sleep duration that weekend considerably exceeds the usual recommended range. This has led some researchers to caution that occasional catch-up sleep, however appealing as a strategy, should not be regarded as a substitute for consistently adequate sleep across the whole week.",
+      },
+      {
+        label: "E",
+        text: "Given this evidence, sleep scientists generally recommend prioritising consistency over occasional compensation: going to bed and waking at similar times each day, including weekends, rather than alternating between severe weekday sleep restriction and extended weekend recovery. Workplaces and schools, several researchers argue, could likewise do more to accommodate natural variation in sleep needs, particularly given evidence that adolescents' biological sleep timing shifts later during puberty, making conventional early school start times especially poorly matched to teenagers' sleep physiology. Whether such institutional changes will be widely adopted remains uncertain, but the underlying physiological case for treating sleep as a non-negotiable biological requirement, rather than a flexible lifestyle choice, is, researchers argue, now considerably stronger than it was even a decade ago.",
+      },
+    ],
+    questions: [
+      {
+        id: "q1",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "How do sleep researchers characterise 'sleep debt', according to paragraph A?",
+        options: [
+          { key: "A", text: "A minor inconvenience with no lasting effect" },
+          { key: "B", text: "A physiological deficit that accumulates until repaid" },
+          { key: "C", text: "A condition affecting only a small minority of adults" },
+          { key: "D", text: "A problem limited to people who work night shifts" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q2",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What did the study described in paragraph B find surprising about participants restricted to six hours of sleep?",
+        options: [
+          { key: "A", text: "Their cognitive performance improved slightly over two weeks" },
+          { key: "B", text: "They felt only moderately tired despite severely impaired performance" },
+          { key: "C", text: "They performed better than participants kept awake for 24 hours" },
+          { key: "D", text: "They were unable to complete the attention and reaction-time tasks" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q3",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph C, what is one proposed explanation for the link between short sleep and weight gain?",
+        options: [
+          { key: "A", text: "Short sleep directly slows the metabolism of fat" },
+          { key: "B", text: "Short sleep alters appetite-regulating hormones" },
+          { key: "C", text: "Short sleep reduces the time available for exercise" },
+          { key: "D", text: "Short sleep increases cravings for salty food specifically" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q4",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What does the research described in paragraph D suggest about catch-up sleep?",
+        options: [
+          { key: "A", text: "It fully reverses all effects of sleep debt within one night" },
+          { key: "B", text: "It may improve some cognitive effects but not fully normalise metabolic effects" },
+          { key: "C", text: "It has no measurable benefit of any kind" },
+          { key: "D", text: "It is more effective than consistent nightly sleep" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q5",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "More than a third of adults in some national surveys report averaging six hours of sleep or fewer on workdays.",
+        correctAnswer: "TRUE",
+      },
+      {
+        id: "q6",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Sleep-deprived participants in vaccine studies produced a stronger antibody response than well-rested participants.",
+        correctAnswer: "FALSE",
+      },
+      {
+        id: "q7",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "All researchers agree that weekend catch-up sleep is completely ineffective.",
+        correctAnswer: "NOT GIVEN",
+      },
+      {
+        id: "q8",
+        type: QUESTION_TYPES.TRUE_FALSE_NOT_GIVEN,
+        prompt: "Adolescents' biological sleep timing shifts to become later during puberty.",
+        correctAnswer: "TRUE",
+      },
+      {
+        id: "q9",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "How many hours of sleep do most adults require per night, according to paragraph A?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "seven and nine",
+        acceptableAnswers: ["seven and nine", "seven to nine", "seven to nine hours", "7 to 9 hours", "7-9 hours"],
+      },
+      {
+        id: "q10",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "For how many consecutive weeks were participants restricted to six hours of sleep in the study mentioned in paragraph B?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "two weeks",
+        acceptableAnswers: ["two weeks", "2 weeks"],
+      },
+      {
+        id: "q11",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "What is understood to play a central role in regulating the body's response to infection?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "sleep",
+        acceptableAnswers: ["sleep"],
+      },
+      {
+        id: "q12",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "What do sleep scientists generally recommend prioritising over occasional catch-up sleep?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "consistency",
+        acceptableAnswers: ["consistency", "consistent sleep"],
+      },
+    ],
+  },
+  {
+    id: "rp-06",
+    title: "Should Cities Ban Cars? The Debate Over Car-Free Zones",
+    part: 3,
+    estimatedMinutes: 20,
+    paragraphs: [
+      {
+        label: "A",
+        text: "Over the past two decades, a growing number of European cities — among them Oslo, Ghent, and parts of central Paris — have introduced schemes to restrict or entirely eliminate private car access to designated zones, usually historic city centres, replacing road space with pedestrian areas, cycle lanes and expanded public transport. Supporters argue that such schemes are long overdue, pointing to falling air pollution, quieter streets and a resurgence of street-level retail and café culture in the areas affected. Critics, however, argue that these benefits are unevenly distributed, and that car-free policies risk excluding precisely the residents least able to adapt to them.",
+      },
+      {
+        label: "B",
+        text: "The empirical case for car-free zones rests substantially on air-quality and public-health data. Oslo's city centre, after removing most on-street parking and restricting through-traffic beginning in 2017, recorded measurable reductions in nitrogen dioxide concentrations within two years, a pollutant strongly associated with respiratory illness. Researchers studying the Ghent scheme, introduced in 2017, found a comparable pattern: traffic volumes in the restricted zone fell by roughly half, while cycling trips rose sharply, and local business associations, who had initially opposed the plan, later reported that footfall in affected streets had not fallen as feared and in some cases had risen. Such findings are frequently cited by advocates as evidence that the anticipated economic harm to local businesses, a common objection raised before these schemes are introduced, tends not to materialise once cyclists and pedestrians are counted alongside the drivers who no longer pass through.",
+      },
+      {
+        label: "C",
+        text: "Nonetheless, the distributional concerns raised by critics deserve serious attention rather than dismissal. Residents who rely on a car for reasons unrelated to convenience — tradespeople transporting tools and equipment, people with mobility impairments for whom walking or cycling is not a realistic alternative, and families in outlying neighbourhoods poorly served by public transport — are disproportionately affected by restrictions that assume a level of transport flexibility not everyone actually has. Several cities have responded with targeted exemptions: permits for registered tradespeople, disabled-access vehicles, and residents within the zone itself, alongside investment in frequent, affordable public transport intended to make car ownership less necessary for reaching the zone from further out. Whether such measures adequately offset the burden imposed on affected groups remains genuinely contested, and is not, in this writer's view, a question the available evidence yet answers conclusively.",
+      },
+      {
+        label: "D",
+        text: "A further point of contention concerns emergency services and deliveries, which cannot simply be rerouted around a restricted zone the way private car journeys can. Cities that have implemented these schemes successfully have generally done so by retaining dedicated, clearly marked access routes and time-restricted delivery windows — typically early morning, before pedestrian footfall rises — rather than banning vehicle access outright. Where this planning has been inadequate, as critics note occurred in the early stages of at least one scheme, congestion has simply relocated to the boundary streets surrounding the restricted zone rather than disappearing, undermining much of the intended benefit and shifting the burden onto residents of adjacent neighbourhoods who gained none of the zone's advantages.",
+      },
+      {
+        label: "E",
+        text: "On balance, the accumulating evidence from schemes now a decade or more old suggests that well-designed car-free zones can deliver genuine environmental and commercial benefits without the severe economic disruption once feared, provided that planners treat the needs of tradespeople, disabled residents and those living just outside the zone's boundary as integral to the design rather than as problems to be solved after the fact. The more troubling cases, on the evidence available, appear to be not the concept itself but its poorly planned implementations — a distinction that is frequently lost in public debate, where 'car-free zones' tend to be discussed as a single uniform policy rather than a design that can be executed well or badly.",
+      },
+    ],
+    questions: [
+      {
+        id: "q1",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph A, what do critics of car-free zones argue?",
+        options: [
+          { key: "A", text: "That air pollution has not actually fallen in affected areas" },
+          { key: "B", text: "That the benefits are unevenly distributed and may exclude some residents" },
+          { key: "C", text: "That retail businesses always benefit equally from the schemes" },
+          { key: "D", text: "That public transport investment is unnecessary" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q2",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "What did local business associations in Ghent report after the scheme was introduced, according to paragraph B?",
+        options: [
+          { key: "A", text: "Footfall fell sharply, as they had originally feared" },
+          { key: "B", text: "Footfall did not fall as feared, and in some cases increased" },
+          { key: "C", text: "They had never opposed the scheme" },
+          { key: "D", text: "Cycling trips fell while traffic volumes rose" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q3",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph C, which group is given as an example of residents disproportionately affected by car restrictions?",
+        options: [
+          { key: "A", text: "People with mobility impairments" },
+          { key: "B", text: "Tourists visiting the city centre" },
+          { key: "C", text: "Cyclists who commute daily" },
+          { key: "D", text: "Local café owners" },
+        ],
+        correctAnswer: "A",
+      },
+      {
+        id: "q4",
+        type: QUESTION_TYPES.MULTIPLE_CHOICE,
+        prompt: "According to paragraph D, what happens when planning for deliveries and emergency access is inadequate?",
+        options: [
+          { key: "A", text: "Congestion disappears entirely from the city" },
+          { key: "B", text: "Congestion relocates to streets surrounding the restricted zone" },
+          { key: "C", text: "Emergency services are given unrestricted access at all times" },
+          { key: "D", text: "Delivery companies stop serving the city centre altogether" },
+        ],
+        correctAnswer: "B",
+      },
+      {
+        id: "q5",
+        type: QUESTION_TYPES.YES_NO_NOT_GIVEN,
+        prompt: "The writer believes that car-free zones are fundamentally a flawed concept that cannot work well.",
+        correctAnswer: "NO",
+      },
+      {
+        id: "q6",
+        type: QUESTION_TYPES.YES_NO_NOT_GIVEN,
+        prompt: "The writer believes that the distributional concerns raised by critics deserve serious attention.",
+        correctAnswer: "YES",
+      },
+      {
+        id: "q7",
+        type: QUESTION_TYPES.YES_NO_NOT_GIVEN,
+        prompt: "The writer believes that current evidence conclusively proves exemption schemes fully offset the burden on affected groups.",
+        correctAnswer: "NO",
+      },
+      {
+        id: "q8",
+        type: QUESTION_TYPES.YES_NO_NOT_GIVEN,
+        prompt: "The writer believes that public opinion on car-free zones has shifted significantly over the past five years.",
+        correctAnswer: "NOT GIVEN",
+      },
+      {
+        id: "q9",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "In what year did Oslo begin restricting through-traffic in its city centre?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "2017",
+        acceptableAnswers: ["2017"],
+      },
+      {
+        id: "q10",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "By roughly how much did traffic volumes fall in Ghent's restricted zone?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "roughly half",
+        acceptableAnswers: ["roughly half", "half", "by half", "about half"],
+      },
+      {
+        id: "q11",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "What pollutant is mentioned as being strongly associated with respiratory illness?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "nitrogen dioxide",
+        acceptableAnswers: ["nitrogen dioxide", "NO2"],
+      },
+      {
+        id: "q12",
+        type: QUESTION_TYPES.SHORT_ANSWER,
+        prompt: "According to paragraph D, when are time-restricted delivery windows typically scheduled?",
+        wordLimit: "NO MORE THAN THREE WORDS",
+        correctAnswer: "early morning",
+        acceptableAnswers: ["early morning", "in the early morning"],
+      },
+    ],
+  },
 ];
 
-function toPublicQuestion({ correctAnswer, acceptableAnswers, ...rest }) {
+function toPublicQuestion({ correctAnswer, acceptableAnswers, correctAnswers, ...rest }) {
   return rest;
 }
 

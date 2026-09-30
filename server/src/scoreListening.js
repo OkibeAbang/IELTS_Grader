@@ -1,20 +1,6 @@
 import { getListeningSectionWithAnswers, getAllListeningSectionsWithAnswers } from "./listeningPassageBank.js";
 import { bandForScore } from "./bandConversionTable.js";
-import { isCorrect } from "./markingEngine.js";
-
-function scoreQuestions(questions, answers) {
-  return questions.map((q) => {
-    const userAnswer = answers?.[q.id] ?? "";
-    return {
-      id: q.id,
-      type: q.type,
-      prompt: q.prompt,
-      userAnswer,
-      correctAnswer: q.correctAnswer,
-      isCorrect: isCorrect(q, userAnswer),
-    };
-  });
-}
+import { scoreQuestions } from "./markingEngine.js";
 
 function scoreListeningAttempt({ sectionId, answers }) {
   const section = getListeningSectionWithAnswers(sectionId);
@@ -44,8 +30,24 @@ function scoreListeningAttempt({ sectionId, answers }) {
 // than a single section in isolation. answersBySectionId is keyed by
 // section id, each value the same {questionId: answer} shape
 // scoreListeningAttempt takes.
-function scoreListeningFullTest({ answersBySectionId }) {
-  const sections = getAllListeningSectionsWithAnswers();
+function scoreListeningFullTest({ answersBySectionId, sectionIds }) {
+  const bank = getAllListeningSectionsWithAnswers();
+  let sections = bank;
+
+  // Score exactly the sections this test was made of. Scoring the whole
+  // bank instead would count parts from other tests the user never saw as
+  // all-wrong, understating the band.
+  if (Array.isArray(sectionIds) && sectionIds.length > 0) {
+    sections = sectionIds.map((id) => {
+      const section = bank.find((s) => s.id === id);
+      if (!section) {
+        const err = new Error("Section not found");
+        err.code = "SECTION_NOT_FOUND";
+        throw err;
+      }
+      return section;
+    });
+  }
 
   const sectionResults = sections.map((section) => {
     const answers = answersBySectionId?.[section.id] ?? {};

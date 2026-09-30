@@ -6,14 +6,33 @@ import ContinuousReadingTest from '../components/reading/ContinuousReadingTest';
 import SinglePassagePractice from '../components/reading/SinglePassagePractice';
 import ReadingFullTestResultsView from '../components/ReadingFullTestResultsView';
 
+// Everything this page and ContinuousReadingTest persist. Starting a new
+// test has to clear all of it, not just the result: leaving the in-progress
+// keys behind would drop you back into the finished test's last passage
+// with its old answers already filled in, and leaving the timer behind
+// would resume the previous sitting's clock instead of a fresh 60 minutes.
+const TEST_KEYS = [
+  'reading-practice:mode',
+  'reading-practice:result',
+  'reading-practice:currentIndex',
+  'reading-practice:answersByPassageId',
+  'reading-practice:assignedPassageIds',
+  'reading-practice:timer',
+];
+
 export default function ReadingPracticePage() {
   useDocumentTitle('Reading Practice');
   const [mode, setMode] = usePersistedState('reading-practice:mode', null);
   const [result, setResult] = usePersistedState('reading-practice:result', null);
 
-  function handleChangeMode() {
-    clearPersistedState('reading-practice:mode');
+  // Safe to clear the timer key directly here: ContinuousReadingTest is
+  // unmounted whenever this runs (the results view is what's showing), so
+  // no mounted countdown hook is holding in-memory state that would go
+  // stale. See FullTestPage's handleStart for the same reasoning.
+  function handleStartNewTest() {
+    TEST_KEYS.forEach(clearPersistedState);
     setMode(null);
+    setResult(null);
   }
 
   return (
@@ -30,9 +49,9 @@ export default function ReadingPracticePage() {
         <Link to="/practice" className="btn-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back to Practice
         </Link>
-        {mode && !result && (
-          <button type="button" className="btn-secondary" onClick={handleChangeMode}>
-            Change practice mode
+        {mode && (
+          <button type="button" className="btn-secondary" onClick={handleStartNewTest}>
+            {result ? 'Start a new test' : 'Change practice mode'}
           </button>
         )}
       </div>
@@ -61,9 +80,16 @@ export default function ReadingPracticePage() {
         <ContinuousReadingTest persistPrefix="reading-practice" onComplete={setResult} />
       )}
 
-      {mode === 'single' && <SinglePassagePractice />}
+      {mode === 'single' && !result && <SinglePassagePractice />}
 
-      {result && <ReadingFullTestResultsView result={result} />}
+      {result && (
+        <>
+          <ReadingFullTestResultsView result={result} />
+          <button type="button" className="submit-btn" onClick={handleStartNewTest}>
+            Start a new test
+          </button>
+        </>
+      )}
     </div>
   );
 }

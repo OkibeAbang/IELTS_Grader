@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchListeningSections, fetchListeningSection, submitListeningFullTest } from '../../api/listening';
+import { fetchListeningSection, submitListeningFullTest } from '../../api/listening';
 import usePersistedState, { clearPersistedState } from '../../hooks/usePersistedState';
 import usePersistedCountdown, { formatCountdown } from '../../hooks/usePersistedCountdown';
 import AudioScriptPlayer from './AudioScriptPlayer';
@@ -8,11 +8,18 @@ import QuestionInput from '../QuestionInput';
 const TEST_SECONDS = 30 * 60;
 
 // Shared by the standalone Listening Practice page and Full Test's
-// listening step — real IELTS Listening is every available part in one
-// continuous ~30-minute sitting, one combined score, not a single section
-// in isolation. Both callers get the same real test; only the page chrome
-// around it (header, whether "Restart" makes sense) differs.
-export default function ContinuousListeningTest({ persistPrefix, onComplete, allowRestart = true, allowTimerControl = true }) {
+// listening step. A "test" here is one complete set of parts (real IELTS
+// Listening: Parts 1-4 in one continuous ~30-minute sitting, one combined
+// score) — the caller picks which test, this runs all of its parts in
+// order. Both callers get the same real test; only the page chrome around
+// it (header, whether "Restart" makes sense) differs.
+export default function ContinuousListeningTest({
+  persistPrefix,
+  test,
+  onComplete,
+  allowRestart = true,
+  allowTimerControl = true,
+}) {
   const currentIndexKey = `${persistPrefix}:currentIndex`;
   const answersKey = `${persistPrefix}:answersBySectionId`;
   const timerKey = `${persistPrefix}:timer`;
@@ -26,15 +33,26 @@ export default function ContinuousListeningTest({ persistPrefix, onComplete, all
 
   const countdown = usePersistedCountdown(timerKey, TEST_SECONDS, () => handleFinalSubmit());
 
+  const testSectionIds = test?.sectionIds;
+
   useEffect(() => {
-    fetchListeningSections()
-      .then((list) => {
-        const sorted = [...list].sort((a, b) => a.part - b.part);
-        return Promise.all(sorted.map((s) => fetchListeningSection(s.id)));
+    if (!testSectionIds) return undefined;
+    let cancelled = false;
+    setSections(null);
+    setLoadError(null);
+
+    Promise.all(testSectionIds.map((id) => fetchListeningSection(id)))
+      .then((loaded) => {
+        if (!cancelled) setSections(loaded);
       })
-      .then(setSections)
-      .catch((err) => setLoadError(err.message));
-  }, []);
+      .catch((err) => {
+        if (!cancelled) setLoadError(err.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [testSectionIds]);
 
   useEffect(() => {
     if (sections) countdown.start();
@@ -53,7 +71,13 @@ export default function ContinuousListeningTest({ persistPrefix, onComplete, all
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const data = await submitListeningFullTest(answersBySectionId);
+      // Derived from what's actually loaded rather than the test prop, so
+      // the scored set can never drift from what was displayed.
+      const data = await submitListeningFullTest(
+        answersBySectionId,
+        (sections ?? []).map((s) => s.id),
+        test?.testNumber
+      );
       onComplete(data);
     } catch (err) {
       setSubmitError(err.message);

@@ -5,6 +5,11 @@ export async function fetchListeningSections() {
   return data.sections;
 }
 
+export async function fetchListeningTests() {
+  const data = await requestJson('/api/listening/tests');
+  return data.tests;
+}
+
 export async function fetchListeningSection(id) {
   const data = await requestJson(`/api/listening/sections/${encodeURIComponent(id)}`);
   return data.section;
@@ -35,10 +40,10 @@ export async function deleteListeningAttempt(id) {
   await requestJson(`/api/listening/attempts/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
-export async function submitListeningFullTest(answersBySectionId) {
+export async function submitListeningFullTest(answersBySectionId, sectionIds, testNumber) {
   return requestJson('/api/listening/attempts/full-test', {
     method: 'POST',
-    body: JSON.stringify({ answersBySectionId }),
+    body: JSON.stringify({ answersBySectionId, sectionIds, testNumber }),
   });
 }
 
