@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
@@ -34,6 +35,18 @@ export default function ReadingPracticePage() {
     setMode(null);
     setResult(null);
   }
+
+  // Arriving at this page should always start at "choose a mode," never
+  // resume a finished test's results from a previous visit — a completed
+  // result sitting in storage from before this mount means the test is
+  // over, not that there's anything to resume. Runs once on mount only
+  // (empty deps), so it doesn't interfere with the in-session "Start a new
+  // test" click right after finishing one, which sets state directly
+  // without a remount.
+  useEffect(() => {
+    if (result) handleStartNewTest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>

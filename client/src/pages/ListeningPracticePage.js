@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import usePersistedState, { clearPersistedState } from '../hooks/usePersistedState';
@@ -29,6 +30,15 @@ export default function ListeningPracticePage() {
     setTest(null);
     setResult(null);
   }
+
+  // Arriving at this page should always start at "choose a test," never
+  // resume a finished test's results from a previous visit. Runs once on
+  // mount only, so it doesn't interfere with the in-session "Start a new
+  // test" click right after finishing one.
+  useEffect(() => {
+    if (result) handleChooseAnotherTest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>

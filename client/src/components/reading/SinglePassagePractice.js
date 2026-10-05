@@ -61,6 +61,19 @@ export default function SinglePassagePractice() {
     setResult(null);
   }
 
+  // Arriving here should always start at "choose a passage," never resume
+  // a finished attempt's results from a previous visit. This component has
+  // its own result state entirely separate from ReadingPracticePage's (the
+  // "full test" path reports its result up via onComplete, but single-
+  // passage practice manages submission itself), so it needs the same
+  // mount-time check independently. Runs once on mount only, so it doesn't
+  // interfere with the in-session results view shown right after
+  // submitting, which sets state directly without a remount.
+  useEffect(() => {
+    if (result) handleChooseAnother();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div>
       {passage && !result && (

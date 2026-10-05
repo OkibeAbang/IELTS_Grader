@@ -127,6 +127,16 @@ export default function SpeakingPracticePage() {
     setUseLiveVoice(false);
   }
 
+  // Arriving at this page should always start at "choose a topic," never
+  // resume a finished attempt's results from a previous visit. Runs once
+  // on mount only, so it doesn't interfere with the in-session results
+  // view shown right after submitting, which sets state directly without
+  // a remount.
+  useEffect(() => {
+    if (result) handleChooseAnother();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div>
       <header className="app-header">
