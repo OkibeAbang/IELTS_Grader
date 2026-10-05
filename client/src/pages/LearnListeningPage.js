@@ -6,13 +6,17 @@ import usePersistedState, { clearPersistedState } from '../hooks/usePersistedSta
 import SectionPicker from '../components/listening/SectionPicker';
 import QuestionTypePicker from '../components/QuestionTypePicker';
 import AudioScriptPlayer from '../components/listening/AudioScriptPlayer';
-import QuestionInput from '../components/QuestionInput';
+import DiagramView from '../components/listening/DiagramView';
+import QuestionList from '../components/QuestionList';
 import ListeningResultsView from '../components/ListeningResultsView';
 
 const TYPE_LABELS = {
   multiple_choice: { label: 'Multiple Choice', description: 'Pick the correct option' },
   short_answer: { label: 'Short Answer', description: 'Form/note completion' },
   multiple_select: { label: 'Multiple Select', description: 'Choose more than one correct option' },
+  matching: { label: 'Matching', description: 'Match each item to an option from the list' },
+  completion_box: { label: 'Completion', description: 'Complete the summary using words from a box' },
+  diagram_label: { label: 'Diagram Labeling', description: 'Label the diagram using words from a box' },
 };
 
 const KEYS = ['listening-drill:sectionId', 'listening-drill:questionType', 'listening-drill:answers', 'listening-drill:result'];
@@ -115,16 +119,15 @@ export default function LearnListeningPage() {
       {section && questionType && !result && (
         <div className="listening-layout">
           <AudioScriptPlayer key={section.id} sectionId={section.id} />
+          {questionType === 'diagram_label' && section.diagram && <DiagramView diagram={section.diagram} />}
 
           <div className="reading-questions-col">
-            {filteredQuestions.map((q, i) => (
-              <div key={q.id} className="reading-question">
-                <p className="reading-question-prompt">
-                  {i + 1}. {q.prompt}
-                </p>
-                <QuestionInput question={q} value={answers[q.id]} onChange={handleAnswerChange} />
-              </div>
-            ))}
+            <QuestionList
+              questions={filteredQuestions}
+              questionGroups={section.questionGroups}
+              answers={answers}
+              onAnswerChange={handleAnswerChange}
+            />
 
             <button type="button" className="submit-btn" onClick={handleSubmit} disabled={submitting}>
               {submitting ? 'Scoring…' : 'Submit answers'}

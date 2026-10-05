@@ -174,6 +174,142 @@ const SPEAKING_TOPICS = [
       ],
     },
   },
+  {
+    id: "st-08",
+    topic: "Food & Rules in Society",
+    isNew: false,
+    part1: {
+      questions: [
+        "What kind of food from other countries have you tried?",
+        "Do you prefer trying new dishes or eating familiar food?",
+        "Is cooking something you enjoy doing, or do you prefer eating out?",
+        "Has the range of food available in your country changed much in recent years?",
+      ],
+    },
+    part2: {
+      cueCard: {
+        topic: "Describe a rule or law in your country that you think is particularly beneficial.",
+        bulletPoints: [
+          "what the rule or law is",
+          "when it was introduced",
+          "who it affects most",
+          "and explain why you think it is beneficial",
+        ],
+        prepSeconds: 60,
+        speakSeconds: 120,
+      },
+    },
+    part3: {
+      questions: [
+        "Should students have more say in deciding the rules at their school?",
+        "Why do some people choose to become lawyers or work in the legal profession?",
+        "Do you think laws should ever change to match changes in public opinion?",
+        "How do rules in the workplace differ from rules in a school?",
+      ],
+    },
+  },
+  {
+    id: "st-09",
+    topic: "Public Transport & Recognising Achievement",
+    isNew: false,
+    part1: {
+      questions: [
+        "How often do you use public transport?",
+        "What kind of public transport is most common where you live?",
+        "Do you prefer travelling by public transport or by car? Why?",
+        "Has public transport in your area changed much in recent years?",
+      ],
+    },
+    part2: {
+      cueCard: {
+        topic: "Describe a person you know who has achieved something impressive.",
+        bulletPoints: [
+          "who this person is",
+          "what they achieved",
+          "how they achieved it",
+          "and explain why you find this achievement impressive",
+        ],
+        prepSeconds: 60,
+        speakSeconds: 120,
+      },
+    },
+    part3: {
+      questions: [
+        "Should schools reward students for good behaviour as well as good grades?",
+        "Do you think top athletes and celebrities are paid fairly compared with other professions?",
+        "Why do some achievements receive much more public recognition than others?",
+        "Is it healthy for children to be strongly encouraged to compete with one another?",
+      ],
+    },
+  },
+  {
+    id: "st-10",
+    topic: "Weather & Unexpected Journeys",
+    isNew: false,
+    part1: {
+      questions: [
+        "What's the weather usually like where you live?",
+        "Do you prefer hot weather or cold weather?",
+        "Does the weather affect what you do on a typical day?",
+        "Has the climate in your country changed much over the years?",
+      ],
+    },
+    part2: {
+      cueCard: {
+        topic: "Describe a journey that took longer than you expected.",
+        bulletPoints: [
+          "where you were going",
+          "how you were travelling",
+          "why it took longer than expected",
+          "and explain how you felt about it",
+        ],
+        prepSeconds: 60,
+        speakSeconds: 120,
+      },
+    },
+    part3: {
+      questions: [
+        "Why do people often underestimate how long a journey will take?",
+        "Do you think most people will drive electric cars in the future?",
+        "What are the advantages and disadvantages of owning a car in a big city?",
+        "How might transport change in your country over the next twenty years?",
+      ],
+    },
+  },
+  {
+    id: "st-11",
+    topic: "Cafés & Scenic Places",
+    isNew: true,
+    part1: {
+      questions: [
+        "How often do you go to cafés?",
+        "Do you prefer eating out or eating at home?",
+        "What kind of food do you enjoy most?",
+        "Has the range of cafés and restaurants where you live changed much recently?",
+      ],
+    },
+    part2: {
+      cueCard: {
+        topic: "Describe a place with a beautiful view that you have visited.",
+        bulletPoints: [
+          "where this place is",
+          "when you visited it",
+          "what the view was like",
+          "and explain why you found it beautiful",
+        ],
+        prepSeconds: 60,
+        speakSeconds: 120,
+      },
+    },
+    part3: {
+      questions: [
+        "Why do you think certain places become popular tourist attractions?",
+        "Do you think the beauty industry has a positive or negative influence on society?",
+        "How do beauty standards differ between cultures?",
+        "Should natural scenic areas be protected from further tourism development?",
+      ],
+    },
+  },
 ];
 
 /**
@@ -193,6 +329,7 @@ function getSpeakingTopicBank() {
     id: t.id,
     topic: t.topic,
     estimatedMinutes: estimateMinutes(t),
+    isNew: t.isNew,
   }));
 }
 

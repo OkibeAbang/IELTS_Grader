@@ -34,6 +34,7 @@ export default function TopicPicker({ onSelect }) {
           >
             <span className="topic-card-title">{t.topic}</span>
             <span className="topic-card-badges">
+              {t.isNew && <span className="topic-badge topic-badge-new">New</span>}
               <span className="topic-badge">Parts 1–3</span>
               <span className="topic-badge topic-badge-duration">
                 <Clock size={12} aria-hidden="true" /> ~{t.estimatedMinutes} min

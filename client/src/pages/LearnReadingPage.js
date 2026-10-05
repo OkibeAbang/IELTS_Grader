@@ -14,6 +14,9 @@ const TYPE_LABELS = {
   yes_no_not_given: { label: 'Yes / No / Not Given', description: "Judge the writer's stated opinions" },
   short_answer: { label: 'Short Answer', description: 'Fill in the blank' },
   multiple_select: { label: 'Multiple Select', description: 'Choose more than one correct option' },
+  matching: { label: 'Matching', description: 'Match each item to an option from the list' },
+  completion_box: { label: 'Completion', description: 'Complete the summary using words from a box' },
+  completion_text: { label: 'Completion', description: 'Complete the summary using words from the passage' },
 };
 
 const KEYS = ['reading-drill:passageId', 'reading-drill:questionType', 'reading-drill:answers', 'reading-drill:result'];

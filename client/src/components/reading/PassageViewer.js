@@ -1,6 +1,6 @@
 import usePersistedState from '../../hooks/usePersistedState';
 import usePersistedCountdown, { formatCountdown } from '../../hooks/usePersistedCountdown';
-import QuestionInput from '../QuestionInput';
+import QuestionList from '../QuestionList';
 
 const TIMER_SECONDS = 20 * 60;
 
@@ -70,11 +70,21 @@ export default function PassageViewer({
           </div>
         )}
 
-        {passage.paragraphs.map((p) => (
-          <p key={p.label}>
-            <strong>{p.label}.</strong> {p.text}
-          </p>
-        ))}
+        {passage.paragraphs.map((p) =>
+          // A paragraph with no text is a section divider (e.g. GT Reading's
+          // "Text 1"/"Text 2" split within one section) rather than a
+          // lettered paragraph — rendered as a plain subheading, no
+          // trailing period, no dangling empty text node after it.
+          p.text ? (
+            <p key={p.label}>
+              <strong>{p.label}.</strong> {p.text}
+            </p>
+          ) : (
+            <h3 key={p.label} className="reading-passage-divider">
+              {p.label}
+            </h3>
+          )
+        )}
       </div>
 
       <div className="reading-questions-col">
@@ -82,14 +92,13 @@ export default function PassageViewer({
           {answeredCount} / {passage.questions.length} answered
         </p>
 
-        {passage.questions.map((q, i) => (
-          <div key={q.id} className="reading-question">
-            <p className="reading-question-prompt">
-              {startIndex + i + 1}. {q.prompt}
-            </p>
-            <QuestionInput question={q} value={answers[q.id]} onChange={onAnswerChange} />
-          </div>
-        ))}
+        <QuestionList
+          questions={passage.questions}
+          questionGroups={passage.questionGroups}
+          answers={answers}
+          onAnswerChange={onAnswerChange}
+          startIndex={startIndex}
+        />
 
         <button type="button" className="submit-btn" onClick={onSubmit} disabled={submitting}>
           {submitting ? submittingLabel : submitLabel}

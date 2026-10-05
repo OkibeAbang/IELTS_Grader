@@ -1407,6 +1407,16 @@ h3 {
   color: var(--gold-deep);
 }
 
+.topic-badge-new {
+  background: var(--rust-pale);
+  color: var(--rust);
+}
+
+.topic-badge-track {
+  background: var(--sand);
+  color: var(--brown-deep);
+}
+
 .part-recorder,
 .cue-card-part2,
 .review-submit {
@@ -1873,6 +1883,19 @@ h3 {
   margin-top: 0;
 }
 
+.reading-passage-divider {
+  margin: 20px 0 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--brown-line);
+  font-size: 1rem;
+}
+
+.reading-passage-divider:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 .reading-questions-col {
   display: flex;
   flex-direction: column;
@@ -1920,6 +1943,84 @@ h3 {
   font-size: 0.78rem;
   color: var(--brown-text);
   margin-top: 4px;
+}
+
+.matching-group {
+  background: var(--cream);
+  border: 1px solid var(--brown-line);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.matching-instructions {
+  font-weight: 600;
+  margin: 0;
+}
+
+.matching-option-pool {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.92rem;
+}
+
+.matching-select {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 8px 10px;
+  border: 1px solid var(--brown-line);
+  border-radius: 7px;
+  background: var(--cream-deep);
+  color: var(--brown-deep);
+  width: 100%;
+}
+
+.completion-summary {
+  background: var(--cream-deep);
+  border: 1px solid var(--brown-line);
+  border-radius: 10px;
+  padding: 16px;
+  line-height: 2.1;
+  margin: 0;
+}
+
+.completion-blank {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 2px;
+}
+
+.matching-select-inline {
+  width: auto;
+  display: inline-block;
+  padding: 4px 8px;
+}
+
+.diagram-svg {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  display: block;
+  margin: 0 auto 18px;
+  color: var(--brown-deep);
+}
+
+.completion-input-inline {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 4px 8px;
+  border: 1px solid var(--brown-line);
+  border-radius: 7px;
+  background: var(--cream-deep);
+  color: var(--brown-deep);
+  width: 140px;
 }
 
 .reading-review-list {

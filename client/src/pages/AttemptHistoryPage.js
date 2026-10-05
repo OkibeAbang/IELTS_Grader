@@ -24,6 +24,10 @@ const QUESTION_TYPE_LABELS = {
   yes_no_not_given: 'Yes/No/Not Given',
   short_answer: 'Short Answer',
   multiple_select: 'Multiple Select',
+  matching: 'Matching',
+  completion_box: 'Completion',
+  completion_text: 'Completion',
+  diagram_label: 'Diagram Labeling',
 };
 
 const SPEAKING_PART_LABELS = {

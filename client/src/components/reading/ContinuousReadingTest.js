@@ -11,9 +11,17 @@ const TEST_SECONDS = 60 * 60;
 // passage per part in the bank today this still yields the same three, but
 // it becomes genuinely varied as the bank grows — and the ordering is
 // always by part, matching the real test's easy-to-hard progression.
-function pickOnePassagePerPart(list) {
+//
+// Filters to one track first — a passage with no `track` is implicitly
+// "academic" (every passage before the General Training batch). This is
+// the one place mixing tracks would actually be wrong: GT and Academic
+// Reading are structurally different tests in real IELTS, so a "Full
+// Reading Test" can never legitimately combine them, unlike Listening or
+// Speaking, which don't distinguish between the two at all.
+function pickOnePassagePerPart(list, track) {
+  const sameTrack = list.filter((p) => (p.track ?? "academic") === track);
   const byPart = new Map();
-  for (const passage of list) {
+  for (const passage of sameTrack) {
     if (!byPart.has(passage.part)) byPart.set(passage.part, []);
     byPart.get(passage.part).push(passage);
   }
@@ -30,7 +38,13 @@ function pickOnePassagePerPart(list) {
 // sitting, 1-40 question numbering, one combined score, not a single
 // passage in isolation. Both callers get the same real test; only the
 // page chrome around it (header, whether "Restart" makes sense) differs.
-export default function ContinuousReadingTest({ persistPrefix, onComplete, allowRestart = true, allowTimerControl = true }) {
+export default function ContinuousReadingTest({
+  persistPrefix,
+  onComplete,
+  allowRestart = true,
+  allowTimerControl = true,
+  track = 'academic',
+}) {
   const currentIndexKey = `${persistPrefix}:currentIndex`;
   const answersKey = `${persistPrefix}:answersByPassageId`;
   const assignedIdsKey = `${persistPrefix}:assignedPassageIds`;
@@ -61,7 +75,7 @@ export default function ContinuousReadingTest({ persistPrefix, onComplete, allow
     fetchReadingPassages()
       .then((list) => {
         const existing = getPersistedValue(assignedIdsKey, null);
-        const ids = existing ?? pickOnePassagePerPart(list);
+        const ids = existing ?? pickOnePassagePerPart(list, track);
         if (!existing) setAssignedPassageIds(ids);
         return Promise.all(ids.map((id) => fetchReadingPassage(id)));
       })

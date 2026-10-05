@@ -18,6 +18,27 @@ export default function QuestionInput({ question, value, onChange }) {
     );
   }
 
+  // matching and diagram_label are the same "pick one option from a shared
+  // pool" mechanic — kept as distinct type strings only so drill-mode and
+  // history labels can say "Diagram Labeling" rather than "Matching",
+  // since that's what's actually being practiced.
+  if (question.type === 'matching' || question.type === 'diagram_label') {
+    return (
+      <select
+        className="matching-select"
+        value={value ?? ''}
+        onChange={(e) => onChange(question.id, e.target.value)}
+      >
+        <option value="">— Select —</option>
+        {question.optionPool.map((opt) => (
+          <option key={opt.key} value={opt.key}>
+            {opt.text ? `${opt.key}. ${opt.text}` : opt.key}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   if (question.type === 'multiple_select') {
     const selected = Array.isArray(value) ? value : [];
     const atCap = selected.length >= question.chooseCount;

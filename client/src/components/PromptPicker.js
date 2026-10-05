@@ -84,6 +84,7 @@ export default function PromptPicker({ taskType, onSelect }) {
           {bank.map((p) => (
             <option key={p.id} value={p.id}>
               [{SUBTYPE_LABELS[p.subtype] || p.subtype}] {truncate(p.text)}
+              {p.isNew ? ' (New)' : ''}
             </option>
           ))}
         </select>

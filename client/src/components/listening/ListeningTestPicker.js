@@ -38,6 +38,7 @@ export default function ListeningTestPicker({ onSelect }) {
           >
             <span className="topic-card-title">Listening Test {test.testNumber}</span>
             <span className="topic-card-badges">
+              {test.isNew && <span className="topic-badge topic-badge-new">New</span>}
               <span className="topic-badge">Parts {test.parts.join(', ')}</span>
               <span className="topic-badge">{test.questionCount} questions</span>
               <span className="topic-badge topic-badge-duration">

@@ -3,7 +3,8 @@ import { fetchListeningSection, submitListeningFullTest } from '../../api/listen
 import usePersistedState, { clearPersistedState } from '../../hooks/usePersistedState';
 import usePersistedCountdown, { formatCountdown } from '../../hooks/usePersistedCountdown';
 import AudioScriptPlayer from './AudioScriptPlayer';
-import QuestionInput from '../QuestionInput';
+import DiagramView from './DiagramView';
+import QuestionList from '../QuestionList';
 
 const TEST_SECONDS = 30 * 60;
 
@@ -150,20 +151,16 @@ export default function ContinuousListeningTest({
             Part {currentIndex + 1} of {sections.length}
           </p>
           <AudioScriptPlayer key={currentSection.id} sectionId={currentSection.id} />
+          {currentSection.diagram && <DiagramView diagram={currentSection.diagram} />}
 
           <div className="reading-questions-col">
-            {currentSection.questions.map((q, i) => (
-              <div key={q.id} className="reading-question">
-                <p className="reading-question-prompt">
-                  {startIndex + i + 1}. {q.prompt}
-                </p>
-                <QuestionInput
-                  question={q}
-                  value={currentAnswers[q.id]}
-                  onChange={(questionId, value) => handleAnswerChange(currentSection.id, questionId, value)}
-                />
-              </div>
-            ))}
+            <QuestionList
+              questions={currentSection.questions}
+              questionGroups={currentSection.questionGroups}
+              answers={currentAnswers}
+              onAnswerChange={(questionId, value) => handleAnswerChange(currentSection.id, questionId, value)}
+              startIndex={startIndex}
+            />
 
             <button type="button" className="submit-btn" onClick={handleNextOrSubmit} disabled={submitting}>
               {submitting ? 'Scoring your test…' : isLastSection ? 'Submit Listening Test' : 'Next Part →'}

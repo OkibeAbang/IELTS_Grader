@@ -177,7 +177,13 @@ function isCorrect(question, userAnswer) {
   const norm = normalize(userAnswer);
   if (!norm) return false;
 
-  if (question.type === "short_answer") {
+  // completion_text (table/flow-chart/form/note/summary completion,
+  // "words from the text" style) is scored identically to short_answer —
+  // same free-recall-with-word-limit rules — and is kept as its own type
+  // string purely so drill-mode/history labels can say "Completion"
+  // rather than "Short Answer", matching the same reasoning as
+  // completion_box/diagram_label vs. matching.
+  if (question.type === "short_answer" || question.type === "completion_text") {
     const maxWords = parseMaxWords(question.wordLimit);
     if (maxWords !== null && countWords(userAnswer) > maxWords) return false;
     return buildAcceptedAnswerSet(question).has(norm);
