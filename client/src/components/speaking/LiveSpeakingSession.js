@@ -10,6 +10,16 @@ import AudioVisualizer from './AudioVisualizer';
 const LIVE_OUTPUT_SAMPLE_RATE = 24000;
 const LIVE_WS_ORIGIN = process.env.REACT_APP_LIVE_WS_URL || 'ws://localhost:4000';
 
+// Safety net for a real, observed Gemini Live reliability gap: the model is
+// instructed to call advance_part(3) the instant Part 2's long turn ends,
+// but in practice it can keep right on talking/asking real Part 3 questions
+// without ever making that call — the conversation itself moves on, the app
+// just never finds out. Part 2's answer is capped "up to 2 minutes" in the
+// prompt, so if no part_started(3) arrives within a generous multiple of
+// that, force the same transition the tool call would have caused rather
+// than silently misattributing real Part 3 answers into Part 2's recording.
+const PART3_FALLBACK_MS = 3 * 60 * 1000;
+
 const PART_LABELS = { 1: 'Part 1: Interview', 2: 'Part 2: Long Turn', 3: 'Part 3: Discussion' };
 
 function formatTime(sec) {
@@ -32,37 +42,53 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
   const [elapsedSec, setElapsedSec] = useState(0);
   const [aiSpeaking, setAiSpeaking] = useState(false);
   const [prepRemaining, setPrepRemaining] = useState(null);
+  // null | 'greeting' | 'part2-ready' — a sign telling the candidate to say
+  // a specific trigger phrase before the examiner will proceed.
+  const [livePrompt, setLivePrompt] = useState(null);
 
   const wsRef = useRef(null);
   const partChunksRef = useRef({ 1: [], 2: [], 3: [] });
   const currentPartRef = useRef(1);
-  const mutedRef = useRef(false);
+  // Audio is always streamed to the model (it needs to hear "Hello" and "I
+  // am ready to speak" to know when to proceed) — this only gates whether
+  // a chunk also gets recorded into the graded take, so prep-time muttering
+  // or the greeting itself isn't counted as answer content.
+  const recordingGateOpenRef = useRef(false);
+  const part2TurnHeardRef = useRef(false);
   const sessionEndedRef = useRef(false);
   const playbackCtxRef = useRef(null);
   const nextPlayTimeRef = useRef(0);
   const playingSourcesRef = useRef([]);
   const elapsedTimerRef = useRef(null);
   const prepTimerRef = useRef(null);
+  const part3FallbackTimerRef = useRef(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
-  const handleAudioChunk = useCallback((chunk) => {
-    // During Part 2's silent prep window we still stream *something* so the
-    // model's own sense of real-time pacing doesn't stall, but it's
-    // zero-filled silence rather than the real mic signal — otherwise the
-    // model can (and in testing, did) react to ambient noise or the
-    // candidate thinking aloud during a window it's instructed to stay
-    // silent for. Not recorded into the graded take either, for the same
-    // reason real answering hasn't started yet.
-    if (mutedRef.current) {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(new ArrayBuffer(chunk.byteLength));
-      }
-      return;
+  function clearPart3FallbackTimer() {
+    if (part3FallbackTimerRef.current) {
+      clearTimeout(part3FallbackTimerRef.current);
+      part3FallbackTimerRef.current = null;
     }
-    partChunksRef.current[currentPartRef.current].push(chunk);
+  }
+
+  function beginPart3() {
+    clearPart3FallbackTimer();
+    currentPartRef.current = 3;
+    clearPrepTimer();
+    setPhase('part3');
+    setLivePrompt(null);
+  }
+
+  const handleAudioChunk = useCallback((chunk) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(chunk);
+    }
+    // Only counts toward the graded recording once the relevant gate has
+    // opened (see recordingGateOpenRef) — e.g. the initial greeting and
+    // Part 2's prep-time muttering are heard by the model but not recorded.
+    if (recordingGateOpenRef.current) {
+      partChunksRef.current[currentPartRef.current].push(chunk);
     }
   }, []);
 
@@ -119,19 +145,16 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
       prepTimerRef.current = null;
     }
     setPrepRemaining(null);
-    mutedRef.current = false;
   }
 
   function startPart2PrepTimer() {
     const prepSeconds = topic.part2.cueCard.prepSeconds;
     setPrepRemaining(prepSeconds);
-    mutedRef.current = true;
     prepTimerRef.current = setInterval(() => {
       setPrepRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(prepTimerRef.current);
           prepTimerRef.current = null;
-          mutedRef.current = false;
           return 0;
         }
         return prev - 1;
@@ -149,6 +172,7 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
       mic.stop();
       clearPlayback();
       clearPrepTimer();
+      clearPart3FallbackTimer();
       if (elapsedTimerRef.current) {
         clearInterval(elapsedTimerRef.current);
         elapsedTimerRef.current = null;
@@ -190,6 +214,10 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
     partChunksRef.current = { 1: [], 2: [], 3: [] };
     currentPartRef.current = 1;
     sessionEndedRef.current = false;
+    recordingGateOpenRef.current = false;
+    part2TurnHeardRef.current = false;
+    setLivePrompt(null);
+    clearPart3FallbackTimer();
 
     try {
       const ticket = await fetchLiveTicket(topic.id);
@@ -208,20 +236,45 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
           if (msg.type === 'ready') {
             await mic.start();
             setPhase('part1');
+            setLivePrompt('greeting');
             elapsedTimerRef.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+          } else if (msg.type === 'test_started') {
+            setLivePrompt(null);
+            recordingGateOpenRef.current = true;
           } else if (msg.type === 'part_started') {
             currentPartRef.current = msg.part;
             clearPrepTimer();
             if (msg.part === 2) {
               setPhase('part2');
               startPart2PrepTimer();
+              // Instructions/prep aren't graded content — recording reopens
+              // once the candidate actually says they're ready (below).
+              recordingGateOpenRef.current = false;
+              part2TurnHeardRef.current = false;
+              setLivePrompt(null);
             } else if (msg.part === 3) {
-              setPhase('part3');
+              // The real signal arrived — the fallback timer below is now
+              // unnecessary for this session.
+              beginPart3();
             }
+          } else if (msg.type === 'part2_recording_started') {
+            setLivePrompt(null);
+            recordingGateOpenRef.current = true;
+            clearPart3FallbackTimer();
+            part3FallbackTimerRef.current = setTimeout(() => {
+              if (phaseRef.current === 'part2') beginPart3();
+            }, PART3_FALLBACK_MS);
           } else if (msg.type === 'interrupted') {
             clearPlayback();
           } else if (msg.type === 'turn_complete') {
             setAiSpeaking(false);
+            // The sign to say "I am ready to speak" should appear only
+            // after the examiner finishes reading the Part 2 instructions
+            // (its first turn in this part), not while it's still talking.
+            if (phaseRef.current === 'part2' && !part2TurnHeardRef.current && !recordingGateOpenRef.current) {
+              part2TurnHeardRef.current = true;
+              setLivePrompt('part2-ready');
+            }
           } else if (msg.type === 'test_complete') {
             finishSession('complete');
           } else if (msg.type === 'time_up') {
@@ -264,6 +317,7 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
     () => () => {
       wsRef.current?.close();
       mic.stop();
+      clearPart3FallbackTimer();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -323,6 +377,17 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
               <li key={i}>{q}</li>
             ))}
           </ul>
+        )}
+
+        {livePrompt === 'greeting' && (
+          <div className="live-sign">
+            Say <strong>&ldquo;Hello&rdquo;</strong> to begin the test.
+          </div>
+        )}
+        {livePrompt === 'part2-ready' && (
+          <div className="live-sign">
+            When you&rsquo;re ready to begin, say <strong>&ldquo;I am ready to speak.&rdquo;</strong>
+          </div>
         )}
 
         {activePart && (

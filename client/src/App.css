@@ -1537,6 +1537,16 @@ h3 {
   margin-top: 0;
 }
 
+.live-sign {
+  background: var(--green-pale);
+  border: 1px solid var(--green);
+  color: var(--green-deep);
+  border-radius: 10px;
+  padding: 14px 20px;
+  text-align: center;
+  font-size: 1.05rem;
+}
+
 .recorder-controls {
   display: flex;
   align-items: center;

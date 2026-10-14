@@ -31,6 +31,12 @@ const TICKET_TTL_MS = 30 * 1000;
 const tickets = new Map(); // ticket -> { userId, topicId, expiresAt }
 const activeUserSessions = new Set(); // userId currently in a live session
 
+const BEGIN_TEST_TOOL = {
+  name: "begin_test",
+  description: "Call this once, immediately after the candidate greets you for the first time and you've replied with a brief greeting of your own, right before asking the first Part 1 question. Do not call this before they have actually greeted you.",
+  parametersJsonSchema: { type: "object", properties: {} },
+};
+
 const ADVANCE_PART_TOOL = {
   name: "advance_part",
   description: "Call this the moment you finish one part of the test and are moving on to the next. Do not call this for part 1 (the test starts there already).",
@@ -41,6 +47,12 @@ const ADVANCE_PART_TOOL = {
     },
     required: ["part"],
   },
+};
+
+const CANDIDATE_READY_TOOL = {
+  name: "candidate_ready",
+  description: "Call this during Part 2's preparation time, the moment the candidate clearly and deliberately states they are ready to begin speaking (e.g. \"I am ready to speak\" or a very close equivalent) — right before you invite them to begin. Do not call this for any other reason, and do not call it just because you heard some sound or muttering.",
+  parametersJsonSchema: { type: "object", properties: {} },
 };
 
 const END_TEST_TOOL = {
@@ -81,7 +93,10 @@ function buildFullTestExaminerPrompt(topic) {
 
   return `You are a friendly, professional IELTS Speaking examiner conducting a FULL speaking test with 3 parts, back to back, in one continuous conversation. Follow this script closely and in order.
 
-## Part 1 — Interview (start here immediately)
+## Greeting (start here — wait for this before anything else)
+Say nothing and ask nothing until the candidate greets you first (e.g. "Hello", "Hi"). Once they do, reply with a brief friendly greeting of your own, then call the "begin_test" tool, then move straight into Part 1.
+
+## Part 1 — Interview
 Ask the candidate these questions about "${topic.topic}", one at a time, waiting for their full answer before continuing. You may ask a brief natural follow-up if an answer is very short, but keep it moving — this is a short interview, not a deep discussion.
 ${part1Questions}
 
@@ -89,10 +104,10 @@ ${part1Questions}
 When Part 1's questions are done, call the "advance_part" tool with part=2, then say something like "Now I'd like you to talk about a topic for one to two minutes" and read out this cue card:
 "${cueCard.topic}"
 ${bulletPoints}
-Tell the candidate they have ${prepMinutes} minute(s) to prepare, and that they can make notes if they want. During that preparation time, stay completely silent and do NOT respond to anything you hear — the candidate may be thinking aloud or making notes, not talking to you. After roughly ${prepMinutes} minute(s) of silence, prompt them to begin speaking now. Let them speak for up to 2 minutes with minimal interruption (only a brief "thank you" if they stop early or run long).
+Tell the candidate they have about ${prepMinutes} minute(s) to prepare, that they can make notes if they want, and that they should say "I am ready to speak" whenever they want to begin. Then stay completely silent and do NOT respond to anything you hear during this preparation time, no matter what — the candidate may be thinking aloud, muttering notes, or there may be background noise; ignore all of it. The ONLY thing that should get a reaction from you is a clear, deliberate statement that they are ready (such as "I am ready to speak" or a very close equivalent). The moment they say that, call the "candidate_ready" tool, then invite them to begin (e.g. "Go ahead, please.") and let them speak for up to 2 minutes with minimal interruption (only a brief "thank you" if they stop early or run long). The INSTANT their long turn ends, call the "advance_part" tool with part=3 BEFORE you say or ask anything else — do this even before any closing remark on Part 2. Do not move on to Part 3 questions without having called it first; this matters even more than usual here, since this is the one transition you are most likely to forget.
 
 ## Part 3 — Discussion
-When Part 2's long turn is finished, call the "advance_part" tool with part=3, then ask these follow-up discussion questions one at a time, allowing brief natural follow-ups:
+(advance_part with part=3 should already have been called per the instruction above.) Ask these follow-up discussion questions one at a time, allowing brief natural follow-ups:
 ${part3Questions}
 
 ## Ending the test
@@ -102,7 +117,8 @@ After the candidate answers the last Part 3 question, give a brief closing remar
 - Keep your own turns brief (a sentence or two). You are the interviewer, not the speaker.
 - Ask ONE question at a time.
 - Do not grade, correct, or comment on their English — that happens separately after this conversation.
-- Always call "advance_part" and "end_test" exactly as instructed above — the app relies on these calls to track progress through the test.`;
+- Do not ever reveal, hint at, or suggest answers to the candidate, at any point in the test.
+- Always call "begin_test", "advance_part", "candidate_ready", and "end_test" exactly as instructed above — the app relies on these calls to track progress through the test.`;
 }
 
 function sendControl(ws, payload) {
@@ -149,8 +165,12 @@ async function handleConnection(ws, userId, topicId) {
   function handleToolCall(functionCalls) {
     const responses = [];
     for (const call of functionCalls) {
-      if (call.name === "advance_part") {
+      if (call.name === "begin_test") {
+        sendControl(ws, { type: "test_started" });
+      } else if (call.name === "advance_part") {
         sendControl(ws, { type: "part_started", part: call.args?.part });
+      } else if (call.name === "candidate_ready") {
+        sendControl(ws, { type: "part2_recording_started" });
       } else if (call.name === "end_test") {
         sendControl(ws, { type: "test_complete" });
       }
@@ -165,7 +185,7 @@ async function handleConnection(ws, userId, topicId) {
       config: {
         responseModalities: [Modality.AUDIO],
         systemInstruction: buildFullTestExaminerPrompt(topic),
-        tools: [{ functionDeclarations: [ADVANCE_PART_TOOL, END_TEST_TOOL] }],
+        tools: [{ functionDeclarations: [BEGIN_TEST_TOOL, ADVANCE_PART_TOOL, CANDIDATE_READY_TOOL, END_TEST_TOOL] }],
         // Gemini Live defaults to HIGH start-of-speech sensitivity, which
         // readily mistakes background noise for the candidate talking —
         // reported live as both a false "interruption" when testing outside
