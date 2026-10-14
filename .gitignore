@@ -11,6 +11,7 @@ PRIVACY_POLICY_DRAFT.md
 TERMS_OF_SERVICE_DRAFT.md
 DPA_DRAFT.md
 QUESTION_TYPES_ROADMAP.md
+BILLING.md
 
 # Local Claude Code agent configs — not meant to be public.
 .claude/agents/

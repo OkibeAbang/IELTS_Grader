@@ -36,6 +36,8 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
   const wsRef = useRef(null);
   const partChunksRef = useRef({ 1: [], 2: [], 3: [] });
   const currentPartRef = useRef(1);
+  const mutedRef = useRef(false);
+  const sessionEndedRef = useRef(false);
   const playbackCtxRef = useRef(null);
   const nextPlayTimeRef = useRef(0);
   const playingSourcesRef = useRef([]);
@@ -45,6 +47,19 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
   phaseRef.current = phase;
 
   const handleAudioChunk = useCallback((chunk) => {
+    // During Part 2's silent prep window we still stream *something* so the
+    // model's own sense of real-time pacing doesn't stall, but it's
+    // zero-filled silence rather than the real mic signal — otherwise the
+    // model can (and in testing, did) react to ambient noise or the
+    // candidate thinking aloud during a window it's instructed to stay
+    // silent for. Not recorded into the graded take either, for the same
+    // reason real answering hasn't started yet.
+    if (mutedRef.current) {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(new ArrayBuffer(chunk.byteLength));
+      }
+      return;
+    }
     partChunksRef.current[currentPartRef.current].push(chunk);
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(chunk);
@@ -104,16 +119,19 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
       prepTimerRef.current = null;
     }
     setPrepRemaining(null);
+    mutedRef.current = false;
   }
 
   function startPart2PrepTimer() {
     const prepSeconds = topic.part2.cueCard.prepSeconds;
     setPrepRemaining(prepSeconds);
+    mutedRef.current = true;
     prepTimerRef.current = setInterval(() => {
       setPrepRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(prepTimerRef.current);
           prepTimerRef.current = null;
+          mutedRef.current = false;
           return 0;
         }
         return prev - 1;
@@ -123,6 +141,11 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
 
   const finishSession = useCallback(
     (reason) => {
+      // onerror and onclose can both fire for the same dropped connection
+      // (a close event normally follows an error) — guard against double-
+      // running cleanup and double-calling onComplete.
+      if (sessionEndedRef.current) return;
+      sessionEndedRef.current = true;
       mic.stop();
       clearPlayback();
       clearPrepTimer();
@@ -133,20 +156,22 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
       wsRef.current?.close();
       wsRef.current = null;
 
-      if (reason === 'error' || reason === 'fallback') return;
-
-      const missingParts = [1, 2, 3].filter((p) => partChunksRef.current[p].length === 0);
-      if (missingParts.length > 0) {
-        setError(
-          `The session ended before ${missingParts.map((p) => `Part ${p}`).join(' and ')} was recorded. You can try again, or switch to manual mode below.`
-        );
-        setPhase('error');
-        return;
-      }
+      // 'fallback' is the one deliberate "start over manually" action
+      // (the "Switch to manual mode" button) — nothing to salvage there,
+      // the candidate is explicitly choosing a clean restart. Every other
+      // reason (hit the time cap, the socket closed, the model signalled
+      // completion, a connection error) still hands back whatever parts
+      // were actually captured rather than discarding a real recording —
+      // previously, the model failing to call advance_part for a later
+      // part (a real, observed Gemini Live reliability gap, not something
+      // we can force) meant the whole session — including parts that
+      // genuinely succeeded — was thrown away with no grade at all.
+      if (reason === 'fallback') return;
 
       const recordings = {};
       for (const partNum of [1, 2, 3]) {
         const chunks = partChunksRef.current[partNum];
+        if (chunks.length === 0) continue;
         const totalSamples = chunks.reduce((sum, c) => sum + c.byteLength / 2, 0);
         const durationSec = Math.round(totalSamples / 16000);
         const audioBlob = pcmChunksToWav(chunks, 16000, 1);
@@ -164,6 +189,7 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
     setPhase('connecting');
     partChunksRef.current = { 1: [], 2: [], 3: [] };
     currentPartRef.current = 1;
+    sessionEndedRef.current = false;
 
     try {
       const ticket = await fetchLiveTicket(topic.id);
@@ -214,6 +240,7 @@ export default function LiveSpeakingSession({ topic, onComplete, onFallback }) {
         if (phaseRef.current === 'connecting' || ['part1', 'part2', 'part3'].includes(phaseRef.current)) {
           setError('Connection to the live examiner was lost.');
           setPhase('error');
+          finishSession('error');
         }
       };
 

@@ -16,6 +16,8 @@ import SpeakingResultsView from '../components/SpeakingResultsView';
 
 const TARGET_BAND_OPTIONS = [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4];
 
+const PART_NAMES = { part1: 'Part 1', part2: 'Part 2', part3: 'Part 3' };
+
 const KEYS = [
   'speaking-practice:topicId',
   'speaking-practice:targetBand',
@@ -44,6 +46,7 @@ export default function SpeakingPracticePage() {
   const [result, setResult] = usePersistedState('speaking-practice:result', null);
   const [liveVoiceAvailable, setLiveVoiceAvailable] = useState(false);
   const [useLiveVoice, setUseLiveVoice] = useState(false);
+  const [liveIncompleteNotice, setLiveIncompleteNotice] = useState(null);
 
   useEffect(() => {
     fetchLiveVoiceStatus().then(setLiveVoiceAvailable).catch(() => setLiveVoiceAvailable(false));
@@ -67,7 +70,23 @@ export default function SpeakingPracticePage() {
 
   function handleLiveComplete(liveRecordings) {
     setRecordings(liveRecordings);
-    setStep('review');
+    // The live examiner signals part transitions itself (a tool call), and
+    // that call has been observed to not fire reliably — if it doesn't, the
+    // app has no way to know a later part ever started, so it's missing
+    // from liveRecordings entirely. Rather than discard a session that's
+    // otherwise real and gradable, drop into the same manual recorder used
+    // for non-live attempts for just the missing part, then continue to
+    // review as normal.
+    const missingPart = ['part1', 'part2', 'part3'].find((key) => !liveRecordings[key]);
+    if (missingPart) {
+      setLiveIncompleteNotice(
+        `The live conversation ended before ${PART_NAMES[missingPart]} was recorded — finish it manually below, then continue to review as usual.`
+      );
+      setStep(missingPart);
+    } else {
+      setLiveIncompleteNotice(null);
+      setStep('review');
+    }
   }
 
   function handleLiveFallback() {
@@ -77,6 +96,7 @@ export default function SpeakingPracticePage() {
 
   function handlePartComplete(key, data) {
     setRecordings((prev) => ({ ...prev, [key]: data }));
+    setLiveIncompleteNotice(null);
     if (key === 'part1') setStep('part2');
     else if (key === 'part2') setStep('part3');
     else setStep('review');
@@ -125,6 +145,7 @@ export default function SpeakingPracticePage() {
     setResendStatus(null);
     setResult(null);
     setUseLiveVoice(false);
+    setLiveIncompleteNotice(null);
   }
 
   // Arriving at this page should always start at "choose a topic," never
@@ -194,6 +215,10 @@ export default function SpeakingPracticePage() {
 
       {topic && step === 'live' && (
         <LiveSpeakingSession topic={topic} onComplete={handleLiveComplete} onFallback={handleLiveFallback} />
+      )}
+
+      {topic && ['part1', 'part2', 'part3'].includes(step) && liveIncompleteNotice && (
+        <div className="precheck-warning">{liveIncompleteNotice}</div>
       )}
 
       {topic && step === 'part1' && (

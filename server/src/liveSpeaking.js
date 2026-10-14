@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { WebSocketServer } from "ws";
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI, Modality, StartSensitivity } from "@google/genai";
 import { findById } from "./models/users.js";
 import { getSpeakingTopic } from "./speakingQuestionBank.js";
 
@@ -166,6 +166,18 @@ async function handleConnection(ws, userId, topicId) {
         responseModalities: [Modality.AUDIO],
         systemInstruction: buildFullTestExaminerPrompt(topic),
         tools: [{ functionDeclarations: [ADVANCE_PART_TOOL, END_TEST_TOOL] }],
+        // Gemini Live defaults to HIGH start-of-speech sensitivity, which
+        // readily mistakes background noise for the candidate talking —
+        // reported live as both a false "interruption" when testing outside
+        // and the examiner reacting mid-Part-2 when it was meant to stay
+        // silent. LOW + a longer prefix padding requires more sustained,
+        // speech-like audio before it counts as a real turn.
+        realtimeInputConfig: {
+          automaticActivityDetection: {
+            startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_LOW,
+            prefixPaddingMs: 300,
+          },
+        },
       },
       callbacks: {
         onopen: () => sendControl(ws, { type: "ready" }),
