@@ -1,39 +1,42 @@
-import nodemailer from "nodemailer";
-
 /**
- * If SMTP_HOST is set, emails actually send via nodemailer. Otherwise they're
- * logged to the server console — no email account needed to develop or test
- * the verification/reset flows locally; set the SMTP_* env vars later to
- * switch a deployment over to real delivery without touching this call site.
+ * Outbound email (verification / password reset) via Resend's HTTPS API —
+ * not SMTP. The SMTP version hung indefinitely in production (confirmed: a
+ * real forgot-password request to the live Render deployment never
+ * returned even after 90+ seconds), consistent with Render blocking
+ * outbound SMTP ports to prevent abuse. HTTPS (port 443) isn't blocked by
+ * any host, so this sidesteps the problem entirely rather than working
+ * around it with timeouts/retries on a connection that was never going to
+ * succeed.
+ *
+ * If RESEND_API_KEY is unset, emails log to the console instead — no
+ * account needed to develop or test the verification/reset flows locally.
  */
-let transporter;
-
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === "true",
-      auth: process.env.SMTP_USER
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined,
-    });
-  }
-  return transporter;
-}
+const RESEND_API_URL = "https://api.resend.com/emails";
 
 async function sendEmail({ to, subject, text }) {
-  if (!process.env.SMTP_HOST) {
+  if (!process.env.RESEND_API_KEY) {
     console.log(`\n[DEV EMAIL] To: ${to}\nSubject: ${subject}\n\n${text}\n`);
     return;
   }
 
-  await getTransporter().sendMail({
-    from: process.env.EMAIL_FROM || "no-reply@9band.local",
-    to,
-    subject,
-    text,
+  const res = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM || "no-reply@9band.local",
+      to,
+      subject,
+      text,
+    }),
   });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Resend API request failed (${res.status}): ${errBody}`);
+  }
 }
 
 function sendVerificationEmail(user, token) {

@@ -33,3 +33,13 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+      # Outbound email (verification / password reset) via Resend's HTTPS
+      # API — deliberately not SMTP, which hung indefinitely here (Render
+      # appears to block outbound SMTP ports; a real forgot-password
+      # request never returned even after 90+ seconds). Leave unset and
+      # these links just print to the Render logs instead of sending —
+      # fine for a quick check, not for real users.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
