@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
+import { Mail } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import useDelayedNotice from '../hooks/useDelayedNotice';
 import useDocumentTitle from '../hooks/useDocumentTitle';
 import PasswordInput from '../components/PasswordInput';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 import { toolRedirectLabel } from '../config/toolRedirects';
 
 export default function SignupPage() {
@@ -75,8 +76,9 @@ export default function SignupPage() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        <button type="submit" className="submit-btn" disabled={submitting}>
-          {submitting ? 'Creating account…' : 'Sign up'}
+        <button type="submit" className="submit-btn auth-submit-btn" disabled={submitting}>
+          <Mail size={18} aria-hidden="true" />
+          {submitting ? 'Creating account…' : 'Sign up with Email'}
         </button>
         {showColdStartHint && (
           <p className="cold-start-hint">
@@ -92,9 +94,11 @@ export default function SignupPage() {
         </div>
       )}
       {process.env.REACT_APP_GOOGLE_CLIENT_ID && (
-        <div className="google-login-row">
-          <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError('Google sign-in failed')} />
-        </div>
+        <GoogleAuthButton
+          onSuccess={handleGoogleSuccess}
+          onError={() => setError('Google sign-in failed')}
+          label="Sign up with Google"
+        />
       )}
 
       <p className="auth-switch">
