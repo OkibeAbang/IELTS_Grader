@@ -2,6 +2,7 @@ import "dotenv/config";
 import dotenv from "dotenv";
 import http from "node:http";
 import express from "express";
+import compression from "compression";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { initDb } from "./db.js";
@@ -27,6 +28,12 @@ const app = express();
 // X-Forwarded-For; without this, express-rate-limit can't correctly key by
 // client IP (and v8+ throws a validation error rather than silently misbehaving).
 app.set("trust proxy", 1);
+// gzip/brotli response compression — the static content banks (reading/
+// listening/speaking/writing) are 100KB+ of JSON served fresh to every
+// student on every page load; this alone cuts that by roughly 3-5x.
+// compression()'s default filter already skips already-compressed types
+// (audio/*), so it doesn't waste CPU re-compressing streamed MP3s.
+app.use(compression());
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:3000", credentials: true }));
 app.use(cookieParser());
 

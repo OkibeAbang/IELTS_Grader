@@ -5,6 +5,7 @@ import { getPromptBank } from "../promptBank.js";
 import { generatePrompt } from "../generatePrompt.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
+import { cacheControl } from "../middleware/cacheControl.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/essayAttempts.js";
 import { hasProAccess, gateFeedback } from "../billing/feedbackAccess.js";
 import { findReview } from "../models/teacherReviews.js";
@@ -79,7 +80,7 @@ router.post("/grade-section", requireAuth, requireVerifiedEmail, async (req, res
   }
 });
 
-router.get("/prompts", (req, res) => {
+router.get("/prompts", cacheControl(600), (req, res) => {
   const { taskType } = req.query;
 
   if (!["task1", "task2"].includes(taskType)) {

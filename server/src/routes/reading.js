@@ -2,15 +2,16 @@ import express from "express";
 import { getReadingPassageBank, getReadingPassage } from "../readingPassageBank.js";
 import { scoreReadingAttempt, scoreReadingDrill, scoreReadingFullTest } from "../scoreReading.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { cacheControl } from "../middleware/cacheControl.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/readingAttempts.js";
 
 const router = express.Router();
 
-router.get("/passages", (_req, res) => {
+router.get("/passages", cacheControl(600), (_req, res) => {
   res.json({ passages: getReadingPassageBank() });
 });
 
-router.get("/passages/:id", (req, res) => {
+router.get("/passages/:id", cacheControl(600), (req, res) => {
   const passage = getReadingPassage(req.params.id);
   if (!passage) return res.status(404).json({ error: "Passage not found" });
   res.json({ passage });

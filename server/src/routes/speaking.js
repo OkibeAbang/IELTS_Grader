@@ -3,6 +3,7 @@ import multer from "multer";
 import { getSpeakingTopicBank, getSpeakingTopic } from "../speakingQuestionBank.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { requireVerifiedEmail } from "../middleware/requireVerifiedEmail.js";
+import { cacheControl } from "../middleware/cacheControl.js";
 import { gradeSpeaking } from "../gradeSpeaking.js";
 import { gradeSpeakingSection } from "../gradeSpeakingSection.js";
 import {
@@ -49,11 +50,11 @@ router.post("/live/ticket", requireAuth, requireVerifiedEmail, (req, res) => {
   res.json({ ticket: createLiveTicket(req.user.id, topicId) });
 });
 
-router.get("/topics", (_req, res) => {
+router.get("/topics", cacheControl(600), (_req, res) => {
   res.json({ topics: getSpeakingTopicBank() });
 });
 
-router.get("/topics/:id", (req, res) => {
+router.get("/topics/:id", cacheControl(600), (req, res) => {
   const topic = getSpeakingTopic(req.params.id);
   if (!topic) {
     return res.status(404).json({ error: "Topic not found" });

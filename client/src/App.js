@@ -18,28 +18,13 @@ import PricingPage from './pages/PricingPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import BillingPage from './pages/BillingPage';
-import FullTestPage from './pages/FullTestPage';
 import ProfilePage from './pages/ProfilePage';
-import FullTestAttemptDetailPage from './pages/FullTestAttemptDetailPage';
-import LearnWritingPage from './pages/LearnWritingPage';
-import LearnReadingPage from './pages/LearnReadingPage';
-import LearnListeningPage from './pages/LearnListeningPage';
-import LearnSpeakingPage from './pages/LearnSpeakingPage';
-import SpeakingDrillAttemptDetailPage from './pages/SpeakingDrillAttemptDetailPage';
-import EssayGraderPage from './pages/EssayGraderPage';
-import EssayAttemptDetailPage from './pages/EssayAttemptDetailPage';
-import ReadingPracticePage from './pages/ReadingPracticePage';
-import ReadingAttemptDetailPage from './pages/ReadingAttemptDetailPage';
-import ListeningPracticePage from './pages/ListeningPracticePage';
-import ListeningAttemptDetailPage from './pages/ListeningAttemptDetailPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import SpeakingPracticePage from './pages/SpeakingPracticePage';
 import AttemptHistoryPage from './pages/AttemptHistoryPage';
-import AttemptDetailPage from './pages/AttemptDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import './App.css';
 
@@ -54,6 +39,26 @@ const TeacherDashboardPage = lazy(() => import('./pages/TeacherDashboardPage'));
 const TeacherClassDetailPage = lazy(() => import('./pages/TeacherClassDetailPage'));
 const TeacherStudentDetailPage = lazy(() => import('./pages/TeacherStudentDetailPage'));
 const TeacherAttemptReviewPage = lazy(() => import('./pages/TeacherAttemptReviewPage'));
+
+// Same reasoning, applied to the per-skill practice/drill/detail pages: a
+// given student session usually only touches 1-2 of {reading, listening,
+// writing, speaking, full-test} — no reason to ship all of them in the
+// main bundle every visitor downloads before even logging in.
+const FullTestPage = lazy(() => import('./pages/FullTestPage'));
+const FullTestAttemptDetailPage = lazy(() => import('./pages/FullTestAttemptDetailPage'));
+const LearnWritingPage = lazy(() => import('./pages/LearnWritingPage'));
+const LearnReadingPage = lazy(() => import('./pages/LearnReadingPage'));
+const LearnListeningPage = lazy(() => import('./pages/LearnListeningPage'));
+const LearnSpeakingPage = lazy(() => import('./pages/LearnSpeakingPage'));
+const SpeakingDrillAttemptDetailPage = lazy(() => import('./pages/SpeakingDrillAttemptDetailPage'));
+const EssayGraderPage = lazy(() => import('./pages/EssayGraderPage'));
+const EssayAttemptDetailPage = lazy(() => import('./pages/EssayAttemptDetailPage'));
+const ReadingPracticePage = lazy(() => import('./pages/ReadingPracticePage'));
+const ReadingAttemptDetailPage = lazy(() => import('./pages/ReadingAttemptDetailPage'));
+const ListeningPracticePage = lazy(() => import('./pages/ListeningPracticePage'));
+const ListeningAttemptDetailPage = lazy(() => import('./pages/ListeningAttemptDetailPage'));
+const SpeakingPracticePage = lazy(() => import('./pages/SpeakingPracticePage'));
+const AttemptDetailPage = lazy(() => import('./pages/AttemptDetailPage'));
 
 const SIDEBAR_COLLAPSED_KEY = 'ielts-grader-sidebar-collapsed';
 

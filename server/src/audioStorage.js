@@ -151,6 +151,10 @@ async function streamListeningAudio(sectionId, req, res) {
     }
     res.set("Content-Type", "audio/mpeg");
     res.set("Accept-Ranges", "bytes");
+    // This section's audio is static content identical for every student —
+    // once rendered it never changes, so it's safe to cache aggressively,
+    // taking real repeat-play load off the server entirely.
+    res.set("Cache-Control", "public, max-age=86400, immutable");
     res.set("Content-Length", String(response.ContentLength));
     if (response.ContentRange) {
       res.status(206);
@@ -170,6 +174,7 @@ async function streamListeningAudio(sectionId, req, res) {
   }
   res.set("Content-Type", "audio/mpeg");
   res.set("Accept-Ranges", "bytes");
+  res.set("Cache-Control", "public, max-age=86400, immutable");
 
   if (!range) {
     res.set("Content-Length", String(size));

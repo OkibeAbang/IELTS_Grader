@@ -2,22 +2,23 @@ import express from "express";
 import { getListeningSectionBank, getListeningTestBank, getListeningSection } from "../listeningPassageBank.js";
 import { scoreListeningAttempt, scoreListeningDrill, scoreListeningFullTest } from "../scoreListening.js";
 import { requireAuth } from "../middleware/requireAuth.js";
+import { cacheControl } from "../middleware/cacheControl.js";
 import { createAttempt, listAttemptsForUser, findAttemptById, deleteAttempt } from "../models/listeningAttempts.js";
 import { streamListeningAudio } from "../audioStorage.js";
 
 const router = express.Router();
 
-router.get("/sections", (_req, res) => {
+router.get("/sections", cacheControl(600), (_req, res) => {
   res.json({ sections: getListeningSectionBank() });
 });
 
 // Complete tests (one test = its Parts 1-4), for the "choose a test"
 // picker on the Listening practice page.
-router.get("/tests", (_req, res) => {
+router.get("/tests", cacheControl(600), (_req, res) => {
   res.json({ tests: getListeningTestBank() });
 });
 
-router.get("/sections/:id", (req, res) => {
+router.get("/sections/:id", cacheControl(600), (req, res) => {
   const section = getListeningSection(req.params.id);
   if (!section) return res.status(404).json({ error: "Section not found" });
   res.json({ section });
